@@ -8,7 +8,7 @@ const generateToken = (userId) => {
   return jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: '15d'});
 }
 
-router.post('/sign_in', async(req, res) => {
+router.post('/register', async(req, res) => {
   // Handle login logic here
   try {
     const {email, username, password} = req.body;
