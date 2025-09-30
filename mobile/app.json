@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "GymTrack",
-    "slug": "GymTrack",
+    "name": "mobile",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "gymtrack",
+    "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -23,7 +23,6 @@
     },
     "web": {
       "output": "static",
-      "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
