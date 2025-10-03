@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native'
 import styles from "../../assets/styles/login.style"; 
 import { useState } from 'react'
 import { Image } from 'react-native';
@@ -6,15 +6,20 @@ import { Ionicons } from '@expo/vector-icons';
 import  COLORS from '../../constants/colors';
 import { TextInput } from 'react-native-gesture-handler';
 import { Link } from 'expo-router';
+import { useAuthStore } from '@/store/authStore';
 import React from 'react'
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { user, isLoading, login } = useAuthStore();
 
-  const handleLogin = () => {};
+  const handleLogin = async () => {
+    const result = await login(email, password);
+
+    if (!result.success) Alert.alert('Error', result.message || 'Error al iniciar sesión');
+  };
 
   return (
     <KeyboardAvoidingView
@@ -87,8 +92,8 @@ export default function Login() {
           </View>
 
           {/* Login Button */}
-          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-            {loading ? (
+          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
+            {isLoading ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
               <Text style={styles.buttonText}>Iniciar Sesión</Text>
