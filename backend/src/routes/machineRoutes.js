@@ -6,8 +6,8 @@ const router = express.Router();
 
 router.post('/', protectRoute, async (req, res) => {
     try {
-        const { name, image, status, createdBy } = req.body;
-        if (!name || !createdBy || !image) 
+        const { name, image, status } = req.body;
+        if (!name || !image) 
             return res.status(400).json({ message: 'Items Are Required To Register New Machine' });
         
         // Upload image to Cloudinary
