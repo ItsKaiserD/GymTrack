@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const gymMachineSchema = new mongoose.Schema({
+const machineSchema = new mongoose.Schema({
     name: { 
         type: String, 
         required: true
@@ -9,11 +9,8 @@ const gymMachineSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-
     status: { 
-        type: String, 
-        enum: ['available', 'in_use', 'out_of_order'], 
-        default: 'available' 
+        type: String
     },
     createdBy: { 
         type: mongoose.Schema.Types.ObjectId, 
@@ -22,6 +19,6 @@ const gymMachineSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-const GymMachine = mongoose.model('GymMachine', gymMachineSchema);
+const Machine = mongoose.model('Machine', machineSchema);
 
-export default GymMachine;
+export default Machine;

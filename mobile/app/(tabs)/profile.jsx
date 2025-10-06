@@ -74,7 +74,7 @@ export default function Profile(){
                 contentContainerStyle={styles.bookList}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Ionicons name='help-outlinhe' size={50} color={COLORS.textSecondary}/>
+                        <Ionicons name='help-outline' size={50} color={COLORS.textSecondary}/>
                         <Text style={styles.emptyText}>No has creado ninguna máquina</Text>
                         <TouchableOpacity style={styles.addButton} onPress={() => router.push("/create")}>
                             <Text style={styles.addButtonText}>Registra tu primera máquina</Text>
