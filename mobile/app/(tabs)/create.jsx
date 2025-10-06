@@ -6,13 +6,14 @@ import { ScrollView } from 'react-native-gesture-handler';
 import COLORS from '@/constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'react-native';
+import { useState } from 'react';
 
 import * as ImagePicker from "expo-image-picker";
 
 export default function Create() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false); 
 
   const router = useRouter();
@@ -54,5 +55,3 @@ export default function Create() {
     </View>
   )
 }
-
-export default create

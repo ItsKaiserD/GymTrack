@@ -40,6 +40,13 @@ export default function Layout() {
                     tabBarIcon: ({color, size}) => (<Ionicons
                         name='barbell-outline' size={size} color={color}/>)
                 }}/>
+            <Tabs.Screen 
+                name="profile"
+                options={{
+                    title: "Perfil",
+                    tabBarIcon: ({color, size}) => (<Ionicons
+                        name='person-circle' size={size} color={color}/>)
+                }}/>
         </Tabs>
     );
 }
