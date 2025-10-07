@@ -4,12 +4,8 @@ const machineSchema = new mongoose.Schema({
     name: { 
         type: String, 
         required: true
-    }, 
-    image: { 
-        type: String,
-        required: true
     },
-    status: { 
+    image: {
         type: String
     },
     createdBy: { 

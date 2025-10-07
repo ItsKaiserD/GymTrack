@@ -5,10 +5,10 @@ import Machine from '../models/machine.js';
 
 const router = express.Router();
 
-router.post('/', protectRoute, async (req, res) => {
+router.post('/machines', protectRoute, async (req, res) => {
     try {
         const { name, image } = req.body;
-        if (!name || !image) 
+        if (!name) 
             return res.status(400).json({ message: 'Por favor rellene todos los campos' });
         
         // Upload image to Cloudinary
@@ -17,9 +17,8 @@ router.post('/', protectRoute, async (req, res) => {
 
         // Save machine to database
         const newMachine = new Machine({ 
-            name, 
-            image: imageUrl, 
-            status: "available", 
+            name,
+            image: imageUrl,
             createdBy: req.user._id
          });
 
@@ -29,7 +28,7 @@ router.post('/', protectRoute, async (req, res) => {
 
     } catch (error) {
         console.error('Error creating machine:', error);
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
 
@@ -68,14 +67,14 @@ router.delete('/:id', protectRoute, async (req, res) => {
         if (machine.user.toString() != req.user._id.toString())
             return res.status(401).json({message: "Acción no autorizada"});
 
-        if (machine.image && machine.image.includes("cloudinary")){
-            try {
-                const publicId = machine.image.split("/").pop().split(".")[0];
-                await cloudinary.uploader.destroy(publicId);
-            } catch (deleteError) {
-                console.log("Error eliminando imagen de Cloudinary", deleteError);
-            }
-        }
+        // if (machine.image && machine.image.includes("cloudinary")){
+           // try {
+             //   const publicId = machine.image.split("/").pop().split(".")[0];
+               // await cloudinary.uploader.destroy(publicId);
+            //} catch (deleteError) {
+              //  console.log("Error eliminando imagen de Cloudinary", deleteError);
+            //}
+        //}
 
         await machine.deleteOne();
 

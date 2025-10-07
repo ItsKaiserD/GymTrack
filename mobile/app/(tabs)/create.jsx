@@ -1,4 +1,4 @@
-import { View, Text, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator } from 'react-native'
 import React from 'react'
 import { useRouter } from 'expo-router';
 import styles from '@/assets/styles/create.style';
@@ -7,8 +7,12 @@ import COLORS from '@/constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'react-native';
 import { useState } from 'react';
+import { useAuthStore } from '../../store/authStore';
+import { API_URL } from '../../constants/api';
 
-import * as ImagePicker from "expo-image-picker";
+
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function Create() {
   const [name, setName] = useState("");
@@ -18,6 +22,7 @@ export default function Create() {
   const [loading, setLoading] = useState(false); 
 
   const router = useRouter();
+  const { token } = useAuthStore();
 
   const pickImage = async () => {
     try {
@@ -62,7 +67,49 @@ export default function Create() {
     }
   };
 
-  const handleSubmit = async () => {}; 
+  const handleSubmit = async () => {
+    if (!name) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // get file extension from URI or default to jpeg
+      const uriParts = image.split(".");
+      const fileType = uriParts[uriParts.length - 1];
+      const imageType = fileType ? `image/${fileType.toLowerCase()}` : "image/jpeg";
+
+      const imageDataUrl = `data:${imageType};base64,${imageBase64}`;
+
+      const response = await fetch(`${API_URL}/machines`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          image: imageDataUrl, 
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Something went wrong");
+
+      Alert.alert("Listo", "La máquina ha sido registrada exitosamente!");
+      setName("");
+      setImage(null);
+      setImageBase64(null);
+      router.push("/");
+    } catch (error) {
+      console.error("Error creating post:", error);
+      Alert.alert("Error", error.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
