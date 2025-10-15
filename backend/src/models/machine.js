@@ -1,20 +1,22 @@
 import mongoose from "mongoose";
 
-const machineSchema = new mongoose.Schema({
+const machineSchema = new mongoose.Schema(
+{
     name: { 
         type: String, 
-        required: true
+        required: true,
     },
     image: {
-        type: String
+        type: String,
+        required: true,
     },
-    createdBy: { 
+    user: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User',
-        required: true 
-    }
+        ref: "User",
+        required: true,
+    },
 }, { timestamps: true });
 
-const Machine = mongoose.model('Machine', machineSchema);
+const Machine = mongoose.model("Machine", machineSchema);
 
 export default Machine;
