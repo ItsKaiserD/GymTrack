@@ -12,7 +12,7 @@ export const useAuthStore = create((set) => ({
         set({isLoading: true});
 
         try {
-            const response = await fetch("https://api-gymtrack-z1ja.onrender.com/api/auth/register", {
+            const response = await fetch("https://gymtrack-fjhi.onrender.com/api/auth/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -45,7 +45,7 @@ export const useAuthStore = create((set) => ({
     login: async (email, password) => {
         set({isLoading: true});
         try {
-            const response = await fetch("https://api-gymtrack-z1ja.onrender.com/api/auth/login", {
+            const response = await fetch("https://gymtrack-fjhi.onrender.com/api/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

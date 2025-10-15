@@ -1,1 +1,1 @@
-export const API_URL = "https://api-gymtrack-z1ja.onrender.com/api";
+export const API_URL = "https://gymtrack-fjhi.onrender.com/api";
