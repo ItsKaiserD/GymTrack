@@ -11,7 +11,7 @@ const generateToken = (userId) => {
 router.post('/register', async(req, res) => {
   // Handle login logic here
   try {
-    const {email, username, password} = req.body;
+    const {email, username, password, role} = req.body;
 
     if (!email || !username || !password) {
       return res.status(400).json({message: "All fields are required"});
@@ -24,6 +24,9 @@ router.post('/register', async(req, res) => {
     if (username.length < 3) {
       return res.status(400).json({message: "Username must be at least 3 characters"});
     }
+
+    const allowedRoles = ["admin", "trainer"];
+    const normalizedRole = allowedRoles.includes(role) ? role : "trainer";
 
     // Check if user already exists
     const existingEmail = await User.findOne({email});
@@ -40,7 +43,8 @@ router.post('/register', async(req, res) => {
     const newUser = new User({
       email, 
       username, 
-      password
+      password,
+      role: normalizedRole
     });
 
     await newUser.save();
@@ -53,7 +57,8 @@ router.post('/register', async(req, res) => {
       newUser: {
         _id: newUser._id,
         username: newUser.username,
-        email: newUser.email
+        email: newUser.email,
+        role: newUser.role,
       }, 
     })
 
@@ -85,7 +90,8 @@ router.post('/login', async(req, res) => {
       user: {
         _id: user._id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        role: user.role,
       }
     });
   } catch(error){

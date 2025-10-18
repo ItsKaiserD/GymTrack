@@ -11,6 +11,7 @@ export default function Signup() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState("trainer");
     const [showPassword, setShowPassword] = useState(false);
 
     const { user, isLoading, register } = useAuthStore();
@@ -108,6 +109,30 @@ export default function Signup() {
                   />
                 </TouchableOpacity>
             </View>
+            </View>
+
+            {/* Selector de Rol */}
+            <View style={{ marginTop: 12 }}>
+              <Text style={styles.label}>Tipo de cuenta</Text>
+                <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => setRole("trainer")}
+                    style={[styles.chip, role === "trainer" && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, role === "trainer" && styles.chipTextActive]}>
+                      Entrenador
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setRole("admin")}
+                    style={[styles.chip, role === "admin" && styles.chipActive]}
+                  > 
+                    <Text style={[styles.chipText, role === "admin" && styles.chipTextActive]}>
+                      Administrador
+                    </Text>
+                  </TouchableOpacity>
+                </View>
             </View>
 
             {/* Sign Up Button */}

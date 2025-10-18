@@ -92,6 +92,30 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: "600",
   },
+  roleRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.inputBackground,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  chipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  chipText: {
+    color: COLORS.textPrimary,
+    fontWeight: "600",
+  },
+  chipTextActive: {
+    color: COLORS.white,
+  },
 });
 
 export default styles;
