@@ -17,8 +17,8 @@ const upload = multer({
 // LISTAR
 router.get("/", protectRoute, async (req, res) => {
   try {
-    const page = Number(req.query.page || 1);
-    const limit = Number(req.query.limit || 5);
+    const page = parseInt(req.query.page ?? "1", 10);
+    const limit = parseInt(req.query.limit ?? "10", 10);
     const skip = (page - 1) * limit;
 
     const machines = await Machine.find()
@@ -29,7 +29,7 @@ router.get("/", protectRoute, async (req, res) => {
 
     const totalMachines = await Machine.countDocuments();
 
-    res.send({
+    res.json({
       machines,
       currentPage: page,
       totalMachines,

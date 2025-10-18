@@ -26,23 +26,25 @@ const index = () => {
       if(refresh) setRefreshing(true);
       else if (pageNum===1) setLoading(true);
       
-      const response = await fetch(`${API_URL}/machines?page=${pageNum}&limit=2`, {
+      const response = await fetch(`${API_URL}/machines?page=${pageNum}&limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Error al conseguir máquinas");
 
-      const uniqueMachines = 
-        refresh || pageNum === 1
-          ? data.machines
-          : Array.from(new Set ([...machines, ...data.machines].map((machine) => machine._id))).map((id)=>
-          [...machines, data.machines].find((machine) => machine._id === id)
-          );
+      if (refresh || pageNum === 1) {
+        setMachines(data.machines);
+        } else {
+          setMachines((prev) => {
+        const merged = [...prev, ...data.machines];
+        const byId = new Map();
+        for (const m of merged) byId.set(m._id, m);
+        return Array.from(byId.values());
+        });
+      }
 
-      setMachines(uniqueMachines);
-
-      setHasMore(pageNum < data.totalPages);
+      setHasMore(pageNum < Number(data.totalPages || 1));
       setPage(pageNum)
 
     } catch(error) {
@@ -60,30 +62,59 @@ const index = () => {
     fetchMachines()
   }, [])
 
-  const handleLoadMore = async() => {
-    if(hasMore && !loading && !refreshing){
-      await fetchMachines(page + 1);
-    }
+  const handleLoadMore = () => {
+    if (loading || refreshing || !hasMore) return;
+    fetchMachines(page + 1, false);
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.bookCard}>
-      <View style={styles.bookHeader}>
-        <View style={styles.userInfo}>
-          <Text style={styles.username}>{item.user.usename}</Text>
-        </View>
-      </View>
 
-      <View>
-        <Image source={item.image} style={styles.bookImage} contentFit="cover"/>
-      </View>
+  //const renderItem = ({ item }) => (
+    //<View style={styles.bookCard}>
+      //<View style={styles.bookHeader}>
+        //<View style={styles.userInfo}>
+          //<Text style={styles.username}>{item.name}</Text>
+        //</View>
+      //</View>
 
-      <View style={styles.bookDetails}>
-        <Text style={styles.bookTitle}>{item.title}</Text>
-        <Text style={styles.date}>Creada el: {formatPublishDate(item.createdAt)}</Text>
-      </View>
+      //<View>
+        //<Image source={{ uri: item.image }} style={styles.bookImage} contentFit="contain"/>
+      //</View>
+
+      //<View style={styles.bookDetails}>
+        //<Text style={styles.bookTitle}>{item.title}</Text>
+        //<Text style={styles.date}>Creada el: {formatPublishDate(item.createdAt)}</Text>
+      //</View>
+    //</View>
+  //);
+
+  //const renderItem = ({ item }) => (
+  //<View style={[styles.card, { position: 'relative' }]}>
+    //<Image
+      //source={{ uri: item.image }}
+      //style={[styles.bookImage, { position: 'relative', width: '100%', height: 180 }]}
+      //contentFit="cover"
+      //transition={200}
+    ///>
+    //<Text style={styles.title}>{item.name}</Text>
+    //<Text style={styles.meta}>Creada por: {item?.user?.username || "N/A"}</Text>
+  //</View>
+//);
+
+const renderItem = ({ item }) => (
+  <View style={styles.card}>
+    <Image
+      source={{ uri: item.image }}
+      style={styles.cardImage}
+      contentFit="cover"
+      transition={200}
+    />
+
+    <View style={styles.cardBody}>
+      <Text style={styles.cardTitle}>{item.name}</Text>
+      <Text style={styles.cardMeta}>Creada por: {item?.user?.username || "N/A"}</Text>
     </View>
-  );
+  </View>
+);
 
   if (loading) return <Loader/>
 

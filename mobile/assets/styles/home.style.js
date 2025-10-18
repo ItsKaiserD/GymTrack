@@ -123,6 +123,37 @@ const styles = StyleSheet.create({
   footerLoader: {
     marginVertical: 20,
   },
+  card: {
+  position: 'relative',     // <- evita overlay entre items
+  backgroundColor: '#fff',
+  borderRadius: 12,
+  overflow: 'hidden',
+  marginHorizontal: 16,
+  marginBottom: 16,
+  // sombras
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 6,
+  elevation: 2,
+},
+cardImage: {
+  width: '100%',
+  height: 180,              // <- altura explícita (o usa aspectRatio: 16/9)
+  // NO position absolute aquí
+},
+cardBody: {
+  padding: 12,
+},
+cardTitle: {
+  fontSize: 16,
+  fontWeight: '600',
+  marginBottom: 4,
+},
+cardMeta: {
+  fontSize: 12,
+  color: '#6b7280',
+},
 });
 
 export default styles;
