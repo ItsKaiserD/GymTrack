@@ -116,6 +116,23 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: COLORS.white,
   },
+  roleRadioContainer: {
+    marginTop: 20,
+    gap: 12,
+  },
+  radioOption: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  radioText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  radioTextActive: {
+    color: COLORS.primary,
+    fontWeight: "700",
+  },
 });
 
 export default styles;

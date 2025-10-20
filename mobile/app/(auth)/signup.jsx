@@ -112,21 +112,21 @@ export default function Signup() {
             </View>
 
             {/* Selector de Rol */}
-            <View style={styles.roleRow}>
+            <View style={styles.roleSwitch}>
               <TouchableOpacity
+                style={[styles.roleOption, role === "trainer" && styles.activeOption]}
                 onPress={() => setRole("trainer")}
-                style={[styles.chip, role === "trainer" && styles.chipActive]}
               >
-                <Text style={[styles.chipText, role === "trainer" && styles.chipTextActive]}>
+                <Text style={[styles.optionText, role === "trainer" && styles.activeOptionText]}>
                   Entrenador
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={[styles.roleOption, role === "admin" && styles.activeOption]}
                 onPress={() => setRole("admin")}
-                style={[styles.chip, role === "admin" && styles.chipActive]}
               >
-                <Text style={[styles.chipText, role === "admin" && styles.chipTextActive]}>
+                <Text style={[styles.optionText, role === "admin" && styles.activeOptionText]}>
                   Administrador
                 </Text>
               </TouchableOpacity>

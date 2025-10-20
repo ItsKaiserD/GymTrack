@@ -114,6 +114,69 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: "600",
   },
+    roleRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.inputBackground,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  chipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  chipText: {
+    color: COLORS.textPrimary,
+    fontWeight: "600",
+  },
+  chipTextActive: {
+    color: COLORS.white,
+  },
+  roleRadioContainer: {
+    marginTop: 20,
+    gap: 12,
+  },
+  radioOption: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  radioText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  radioTextActive: {
+    color: COLORS.primary,
+    fontWeight: "700",
+  },
+  roleSwitch: {
+  flexDirection: "row",
+  backgroundColor: COLORS.inputBackground,
+  borderRadius: 10,
+  overflow: "hidden",
+  marginVertical: 20,
+},
+roleOption: {
+  flex: 1,
+  paddingVertical: 12,
+  alignItems: "center",
+},
+activeOption: {
+  backgroundColor: COLORS.primary,
+},
+optionText: {
+  color: COLORS.textPrimary,
+  fontWeight: "600",
+},
+activeOptionText: {
+  color: COLORS.white,
+},
 });
 
 export default styles;
