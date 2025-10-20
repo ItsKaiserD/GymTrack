@@ -10,71 +10,84 @@ export const useAuthStore = create((set) => ({
 
     register: async (username, email, password, role) => {
         set({ isLoading: true });
-
         try {
             const res = await fetch(`${API_URL}/auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Accept: "application/json" },
-            body: JSON.stringify({ username, email, password, role }), // ← role se envía siempre
-        });
+            body: JSON.stringify({ username, email, password, role }),
+            });
 
-        const ct = res.headers.get("content-type") || "";
-        const raw = await res.text();                 // SIEMPRE leemos texto
-        let data = null;
+            const ct = res.headers.get("content-type") || "";
+            const raw = await res.text();
+            let data = null;
 
-        if (ct.includes("application/json")) {
-            try { data = JSON.parse(raw); } 
-            catch (e) { throw new Error(`JSON inválido del servidor: ${raw.slice(0, 120)}…`); }
-        } else {
-            console.log("[register] Respuesta no-JSON:", { status: res.status, ct, raw: raw.slice(0, 300) });
+            if (ct.includes("application/json")) {
+                try { data = JSON.parse(raw); }
+                catch { throw new Error("Respuesta JSON inválida del servidor"); }
+            } else {
+            // HTML u otro => no intentes guardar en AsyncStorage
+            throw new Error(`Servidor devolvió ${ct} (status ${res.status})`);
+            }
+
+            if (!res.ok) {
+                throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+            }
+
+            // Acepta 'user' o 'newUser' por compatibilidad
+            const user = data.user || data.newUser;
+            const token = data.token;
+            if (!user || !token) {
+                throw new Error("La respuesta no incluye 'user' o 'token'.");
+            }
+
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+            await AsyncStorage.setItem("token", String(token));
+            set({ user, token, isLoading: false });
+            return { success: true };
+        } catch (error) {
+            set({ isLoading: false });
+            return { success: false, message: String(error.message || error) };
         }
-
-        if (!res.ok) {
-            const msg = (data && (data.message || data.error))
-            || (ct.includes("text/html") ? "El servidor devolvió HTML (posible 404/500 en Render)" : raw)
-            || `HTTP ${res.status}`;
-        throw new Error(msg);
-        }
-
-        await AsyncStorage.setItem("user", JSON.stringify(data.user));
-        await AsyncStorage.setItem("token", data.token);
-        set({ user: data.user, token: data.token, isLoading: false });
-
-        return { success: true };
-    } catch (error) {
-        set({ isLoading: false });
-        return { success: false, message: String(error.message || error) };
-    }
     },
 
-
     login: async (email, password) => {
-        set({isLoading: true});
+        set({ isLoading: true });
         try {
-            const response = await fetch(`${API_URL}/auth/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    email,
-                    password}),
-            }), 
+            const res = await fetch(`${API_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ email, password }),
+            });
 
-            data = await response.json();
+            const ct = res.headers.get("content-type") || "";
+            const raw = await res.text();
+            let data = null;
 
-            if (!response.ok) throw new Error(data.message || "Failed to login");
+            if (ct.includes("application/json")) {
+                try { data = JSON.parse(raw); }
+                catch { throw new Error("Respuesta JSON inválida del servidor"); }
+            } else {
+                throw new Error(`Servidor devolvió ${ct} (status ${res.status})`);
+            }
 
-            await AsyncStorage.setItem("user", JSON.stringify(data.user));
-            await AsyncStorage.setItem("token", data.token);
+            if (!res.ok) {
+                throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+            }
 
-            set({user: data.user, token: data.token, isLoading: false});
-            return {success: true};
+            const user = data.user;
+            const token = data.token;
+            if (!user || !token) {
+                throw new Error("La respuesta no incluye 'user' o 'token'.");
+            }
+
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+            await AsyncStorage.setItem("token", String(token));
+            set({ user, token, isLoading: false });
+            return { success: true };
         } catch (error) {
-            set({isLoading: false});
-            return {success: false, message: error.message || "Failed to login"};
+            set({ isLoading: false });
+            return { success: false, message: String(error.message || error) };
         }
-
     },
 
     checkAuth: async () => {
