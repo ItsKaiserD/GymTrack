@@ -11,7 +11,7 @@ export default function Signup() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState("trainer");
+    const [role, setRole] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
     const { user, isLoading, register } = useAuthStore();
@@ -19,7 +19,7 @@ export default function Signup() {
     const router = useRouter();
 
     const handleSignUp = async () => {
-      const result = await register(username, email, password);
+      const result = await register(username, email, password, role);
       if (!result.success) Alert.alert('Error', result.message);
     };
 
@@ -112,27 +112,24 @@ export default function Signup() {
             </View>
 
             {/* Selector de Rol */}
-            <View style={{ marginTop: 12 }}>
-              <Text style={styles.label}>Tipo de cuenta</Text>
-                <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => setRole("trainer")}
-                    style={[styles.chip, role === "trainer" && styles.chipActive]}
-                  >
-                    <Text style={[styles.chipText, role === "trainer" && styles.chipTextActive]}>
-                      Entrenador
-                    </Text>
-                  </TouchableOpacity>
+            <View style={styles.roleRow}>
+              <TouchableOpacity
+                onPress={() => setRole("trainer")}
+                style={[styles.chip, role === "trainer" && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, role === "trainer" && styles.chipTextActive]}>
+                  Entrenador
+                </Text>
+              </TouchableOpacity>
 
-                  <TouchableOpacity
-                    onPress={() => setRole("admin")}
-                    style={[styles.chip, role === "admin" && styles.chipActive]}
-                  > 
-                    <Text style={[styles.chipText, role === "admin" && styles.chipTextActive]}>
-                      Administrador
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+              <TouchableOpacity
+                onPress={() => setRole("admin")}
+                style={[styles.chip, role === "admin" && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, role === "admin" && styles.chipTextActive]}>
+                  Administrador
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Sign Up Button */}
