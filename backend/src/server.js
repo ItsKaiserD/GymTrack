@@ -2,7 +2,7 @@ import express from 'express';
 import "dotenv/config";
 import cors from 'cors';
 import job from './lib/cron.js';
-import "./config/db.js";
+import "./lib/db.js";
 import User from "./models/User.js";
 import crypto from "crypto";
 import { notifyAdminsByEmail } from "./lib/mailer.js";
