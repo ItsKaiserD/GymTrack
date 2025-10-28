@@ -110,37 +110,6 @@ export default function Signup() {
                 </TouchableOpacity>
             </View>
             </View>
-
-            {/* Selector de Rol */}
-            <View style={styles.roleSwitch}>
-              <TouchableOpacity
-                style={[styles.roleOption, role === "trainer" && styles.activeOption]}
-                onPress={() => setRole("trainer")}
-              >
-                <Text style={[styles.optionText, role === "trainer" && styles.activeOptionText]}>
-                  Entrenador
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.roleOption, role === "admin" && styles.activeOption]}
-                onPress={() => setRole("admin")}
-              >
-                <Text style={[styles.optionText, role === "admin" && styles.activeOptionText]}>
-                  Administrador
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Sign Up Button */}
-            <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.buttonText}>Crear Cuenta</Text>
-            )}
-            </TouchableOpacity>
-
             {/* Navigate to Login */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>¿Ya Tienes Una Cuenta?</Text>

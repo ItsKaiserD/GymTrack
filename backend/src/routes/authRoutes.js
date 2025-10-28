@@ -1,70 +1,130 @@
 import express from 'express';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
+import { notifyAdminsByEmail } from "../lib/mailer.js";
 
 const router = express.Router();
+
+const ADMIN_WHITELIST = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 
 const generateToken = (userId) => {
   return jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: '15d'});
 }
 
-router.post('/register', async(req, res) => {
+//router.post('/register', async(req, res) => {
   // Handle login logic here
-  try {
-    const {email, username, password, role} = req.body;
+  //try {
+    //const {email, username, password, role} = req.body;
 
-    if (!email || !username || !password) {
-      return res.status(400).json({message: "All fields are required"});
-    }
+    //if (!email || !username || !password) {
+      //return res.status(400).json({message: "All fields are required"});
+    //}
 
-    if (password.length < 6) {
-      return res.status(400).json({message: "Password must be at least 6 characters"});
-    }
+    //if (password.length < 6) {
+      //return res.status(400).json({message: "Password must be at least 6 characters"});
+    //}
 
-    if (username.length < 3) {
-      return res.status(400).json({message: "Username must be at least 3 characters"});
-    }
+    //if (username.length < 3) {
+      //return res.status(400).json({message: "Username must be at least 3 characters"});
+    //}
 
-    const allowedRoles = ["admin", "trainer"];
-    const normalizedRole = allowedRoles.includes(role) ? role : "trainer";
+    //const allowedRoles = ["admin", "trainer"];
+    //const normalizedRole = allowedRoles.includes(role) ? role : "trainer";
 
     // Check if user already exists
-    const existingEmail = await User.findOne({email});
-    if (existingEmail) {
-      return res.status(400).json({message: "Email already in use"});
-    }
+    //const existingEmail = await User.findOne({email});
+    //if (existingEmail) {
+      //return res.status(400).json({message: "Email already in use"});
+    //}
 
-    const existingUsername = await User.findOne({username});
-    if (existingUsername) {
-      return res.status(400).json({message: "Username already in use"});
-    }
+    //const existingUsername = await User.findOne({username});
+    //if (existingUsername) {
+      //return res.status(400).json({message: "Username already in use"});
+    //}
 
     // Create new user
-    const newUser = new User({
-      email, 
-      username, 
-      password,
-      role: normalizedRole
-    });
+    //const newUser = new User({
+      //email, 
+      //username, 
+      //password,
+      //role: normalizedRole
+    //});
 
-    await newUser.save();
+    //await newUser.save();
 
     // Generate JWT
-    const token = generateToken(newUser._id);
+    //const token = generateToken(newUser._id);
 
+    //res.status(201).json({
+      //token,
+      //newUser: {
+        //_id: newUser._id,
+        //username: newUser.username,
+        //email: newUser.email,
+        //role: newUser.role,
+      //}, 
+    //})
+
+  //} catch (error) {
+    //console.log("Error in Sign In", error);
+    //res.status(500).json({message: "Server error"});
+  //}
+//});
+
+// Registro público: SOLO trainers
+router.post("/register", async (req, res) => {
+  try {
+    const { email, username, password } = req.body;
+
+    // Validaciones básicas
+    if (!email || !username || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+    if (username.length < 3) {
+      return res.status(400).json({ message: "Username must be at least 3 characters" });
+    }
+
+    // Bloquea que un correo de admin se cree por esta ruta
+    if (ADMIN_WHITELIST.includes(email.toLowerCase())) {
+      return res.status(403).json({ message: "Admin accounts cannot be created via public signup." });
+    }
+
+    // Unicidad
+    const [existingEmail, existingUser] = await Promise.all([
+      User.findOne({ email }),
+      User.findOne({ username }),
+    ]);
+    if (existingEmail) return res.status(400).json({ message: "Email already in use" });
+    if (existingUser) return res.status(400).json({ message: "Username already in use" });
+
+    // Fuerza rol 'trainer' desde el servidor
+    const newUser = new User({ email, username, password, role: "trainer" });
+    await newUser.save();
+
+    // Token + respuesta estándar
+    const token = generateToken(newUser._id, newUser.role);
     res.status(201).json({
       token,
-      newUser: {
+      user: {
         _id: newUser._id,
         username: newUser.username,
         email: newUser.email,
         role: newUser.role,
-      }, 
-    })
+      },
+    });
 
+    // Aviso (no bloqueante)
+    const msg = `Nuevo registro de Entrenador: ${username} <${email}>`;
+    notifyAdminsByEmail("Nuevo registro de Entrenador", msg).catch(() => {});
   } catch (error) {
-    console.log("Error in Sign In", error);
-    res.status(500).json({message: "Server error"});
+    console.error("Error in Sign Up:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

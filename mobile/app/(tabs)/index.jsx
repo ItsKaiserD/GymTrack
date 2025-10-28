@@ -67,7 +67,6 @@ const index = () => {
     fetchMachines(page + 1, false);
   };
 
-
   //const renderItem = ({ item }) => (
     //<View style={styles.bookCard}>
       //<View style={styles.bookHeader}>
@@ -139,7 +138,7 @@ const renderItem = ({ item }) => (
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.headerTitle}>GymTrack</Text>
-            <Text style={styles.headerSubtitle}>Bababooey</Text>
+            <Text style={styles.headerSubtitle}>Main View</Text>
           </View>
         }
         ListFooterComponent={
