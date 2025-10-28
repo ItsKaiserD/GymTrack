@@ -110,6 +110,17 @@ export default function Signup() {
                 </TouchableOpacity>
             </View>
             </View>
+
+            {/* Sign Up Button */}
+            <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.buttonText}>Crear Cuenta</Text>
+            )}
+            </TouchableOpacity>
+
+
             {/* Navigate to Login */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>¿Ya Tienes Una Cuenta?</Text>
