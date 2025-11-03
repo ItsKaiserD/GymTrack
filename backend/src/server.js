@@ -126,6 +126,18 @@ app.get("/api/smtp-diagnose", async (_req, res) => {
   }
 });
 
+import { sendEmail } from "./lib/mailer.js";
+
+app.get("/api/test-send", async (req, res) => {
+  const to = String(req.query.to || process.env.SMTP_USER);
+  try {
+    const info = await sendEmail(to, "Prueba GymTrack (SMTP)", "Si lees esto, el SMTP está funcionando.");
+    res.json({ ok: true, to, messageId: info.messageId, accepted: info.accepted, rejected: info.rejected });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 (async () => {
   try {
     await connectDB();        // 1) conectar
