@@ -126,8 +126,6 @@ app.get("/api/smtp-diagnose", async (_req, res) => {
   }
 });
 
-import { sendEmail } from "./lib/mailer.js";
-
 app.get("/api/test-send", async (req, res) => {
   const to = String(req.query.to || process.env.SMTP_USER);
   try {
