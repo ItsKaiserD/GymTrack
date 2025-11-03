@@ -13,28 +13,52 @@ app.use(express.json());
 
 async function seedAdmins() {
   const list = (process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
+    .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
   if (!list.length) {
-    console.log("[seedAdmins] no ADMIN_EMAILS set, skipping");
+    console.log("[seedAdmins] ADMIN_EMAILS vacío: no se siembran admins");
     return;
   }
 
   for (const email of list) {
-    const exists = await User.findOne({ email });   // <- ya hay conexión
-    if (!exists) {
+    const existing = await User.findOne({ email });
+
+    if (!existing) {
       const tmpPass = crypto.randomBytes(8).toString("hex");
       const username = email.split("@")[0];
 
       const admin = new User({ email, username, password: tmpPass, role: "admin" });
       await admin.save();
 
-      const body = `Admin creado: ${email}\nPassword temporal: ${tmpPass}`;
-      await notifyAdminsByEmail?.("Cuenta Admin creada", body);
+      // Email directo al nuevo admin con su contraseña temporal
+      const bodyNewAdmin =
+        `Hola, se creó tu cuenta de Administrador en GymTrack.\n\n` +
+        `Usuario: ${email}\n` +
+        `Contraseña temporal: ${tmpPass}\n\n` +
+        `Por seguridad, cámbiala al iniciar sesión.`;
+      try { await sendEmail(email, "Tu cuenta Admin en GymTrack", bodyNewAdmin); }
+      catch (e) { console.error("[seedAdmins] error enviando email a nuevo admin:", e.message); }
+
+      // Aviso a la lista de admins existente (opcional)
+      try { await notifyAdminsByEmail("Admin creado", `Se creó el admin: ${email}`); }
+      catch (e) { console.error("[seedAdmins] error avisando a admins:", e.message); }
+
       console.log("[seedAdmins] created admin:", email);
+      continue;
     }
+
+    if (existing.role !== "admin") {
+      existing.role = "admin";
+      await existing.save();
+      try { await sendEmail(email, "Promoción a Admin", "Tu cuenta fue promovida a Administrador en GymTrack."); }
+      catch (e) { console.error("[seedAdmins] error enviando promoción:", e.message); }
+      try { await notifyAdminsByEmail("Rol promovido a Admin", `Usuario ${existing.username} (${email}) ahora es admin.`); }
+      catch (e) { console.error("[seedAdmins] error avisando promoción:", e.message); }
+      console.log("[seedAdmins] promoted to admin:", email);
+      continue;
+    }
+
+    console.log("[seedAdmins] already admin:", email);
   }
 }
 
