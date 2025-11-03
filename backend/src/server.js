@@ -5,6 +5,8 @@ import crypto from "crypto";
 import { notifyAdminsByEmail } from "./lib/mailer.js";
 import authRoutes from "./routes/authRoutes.js";
 import machineRoutes from "./routes/machineRoutes.js";
+import dns from "dns";
+import net from "net";
 
 const app = express();
 app.use(express.json());
@@ -40,6 +42,48 @@ app.use("/api/auth", authRoutes);
 app.use("/api/machines", machineRoutes);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
+
+app.get("/api/smtp-diagnose", async (_req, res) => {
+  const results = {};
+  try {
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    results.host = host;
+
+    // DNS
+    const addrs = await new Promise((resolve, reject) => {
+      dns.resolve4(host, (err, addresses) => (err ? reject(err) : resolve(addresses)));
+    });
+    results.dnsA = addrs;
+
+    // TCP 587
+    results.tcp587 = await new Promise((resolve) => {
+      const s = net.createConnection(587, host);
+      const timer = setTimeout(() => { s.destroy(); resolve("timeout"); }, 7000);
+      s.on("connect", () => { clearTimeout(timer); s.destroy(); resolve("ok"); });
+      s.on("error", (e) => { clearTimeout(timer); resolve(`error: ${e.code || e.message}`); });
+    });
+
+    // TCP 465
+    results.tcp465 = await new Promise((resolve) => {
+      const s = net.createConnection(465, host);
+      const timer = setTimeout(() => { s.destroy(); resolve("timeout"); }, 7000);
+      s.on("connect", () => { clearTimeout(timer); s.destroy(); resolve("ok"); });
+      s.on("error", (e) => { clearTimeout(timer); resolve(`error: ${e.code || e.message}`); });
+    });
+
+    // Intento de envío real (usa notify que ya tiene fallbacks)
+    try {
+      await notifyAdminsByEmail("Diagnóstico GymTrack", "Test SMTP desde Render");
+      results.send = "ok (notifyAdminsByEmail)";
+    } catch (e) {
+      results.send = `error: ${e.message}`;
+    }
+
+    res.json(results);
+  } catch (e) {
+    res.status(500).json({ error: e.message, results });
+  }
+});
 
 (async () => {
   try {
