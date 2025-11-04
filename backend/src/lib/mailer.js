@@ -1,58 +1,61 @@
-import nodemailer from "nodemailer";
-
-function makeTransport({ host, port, secure }) {
-  return nodemailer.createTransport({
-    host,
-    port,               // 587 (STARTTLS) o 465 (SSL)
-    secure,             // true si 465
-    auth: {
-      user: process.env.SMTP_USER, // tu_correo@gmail.com
-      pass: process.env.SMTP_PASS, // App Password sin espacios
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 10000,
-    socketTimeout: 20000,
-    tls: { rejectUnauthorized: false },
-  });
+// src/lib/mailer.js — MailerSend API
+let _fetch = globalThis.fetch;
+async function getFetch() {
+  if (_fetch) return _fetch;
+  // Para entornos donde no exista fetch nativo
+  const mod = await import("node-fetch");
+  _fetch = mod.default;
+  return _fetch;
 }
 
-async function sendCore(to, subject, text, host, port, secure) {
-  const transporter = makeTransport({ host, port, secure });
-  const info = await transporter.sendMail({
-    from: `"GymTrack Notifier" <${process.env.SMTP_USER}>`,
-    to,
+async function mailerSendRequest(to, subject, text) {
+  const apiKey = process.env.MAILERSEND_API_KEY;
+  const apiUrl = process.env.MAILERSEND_API_URL || "https://api.mailersend.com/v1/email";
+  const fromEmail = process.env.SENDER_EMAIL;
+  const fromName = process.env.SENDER_NAME || "GymTrack Notifier";
+
+  if (!apiKey) throw new Error("MAILERSEND_API_KEY no configurado");
+  if (!fromEmail) throw new Error("SENDER_EMAIL no configurado");
+
+  const payload = {
+    from: { email: fromEmail, name: fromName },
+    to: String(to)
+      .split(/[,\s;]+/)
+      .map((email) => ({ email: email.trim() }))
+      .filter((e) => e.email),
     subject,
     text,
+  };
+
+  const fetch = await getFetch();
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
-  console.log(`[mailer] OK host=${host} port=${port} id=${info.messageId} accepted=${info.accepted} rejected=${info.rejected}`);
-  return info;
+
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`MailerSend ${res.status}: ${raw}`);
+  console.log("[mailer] MailerSend OK:", raw);
+  return raw;
 }
 
 export async function sendEmail(to, subject, text) {
-  const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const forcedPort = Number(process.env.SMTP_PORT || 0);
-
-  const attempts = forcedPort
-    ? [{ host, port: forcedPort, secure: forcedPort === 465 }]
-    : [{ host, port: 587, secure: false }, { host, port: 465, secure: true }];
-
-  let lastErr;
-  for (const a of attempts) {
-    try { return await sendCore(to, subject, text, a.host, a.port, a.secure); }
-    catch (e) { console.error(`[mailer] fallo host=${a.host} port=${a.port}: ${e.message}`); lastErr = e; }
-  }
-  throw lastErr;
+  return mailerSendRequest(to, subject, text);
 }
 
 export async function notifyAdminsByEmail(subject, text) {
-  const toList = (process.env.ADMIN_EMAILS || "")
+  const list = (process.env.ADMIN_EMAILS || "")
     .split(/[,\s;]+/)
-    .map(s => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 
-  if (!toList.length) {
+  if (!list.length) {
     console.log("[mailer] ADMIN_EMAILS vacío; no hay destinatarios");
     return;
   }
-  return sendEmail(toList.join(","), subject, text);
+  return sendEmail(list.join(","), subject, text);
 }
