@@ -138,7 +138,7 @@ const renderItem = ({ item }) => (
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.headerTitle}>GymTrack</Text>
-            <Text style={styles.headerSubtitle}>Trainer View</Text>
+            <Text style={styles.headerSubtitle}>Admin View</Text>
           </View>
         }
         ListFooterComponent={

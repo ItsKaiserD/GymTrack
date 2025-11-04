@@ -34,6 +34,13 @@ export default function Layout() {
                         name='home-outline' size={size} color={color}/>)
                 }}/>
             <Tabs.Screen 
+                name="create"
+                options={{
+                    title: "Registrar",
+                    tabBarIcon: ({color, size}) => (<Ionicons
+                        name='barbell-outline' size={size} color={color}/>)
+                }}/>
+            <Tabs.Screen 
                 name="profile"
                 options={{
                     title: "Perfil",
