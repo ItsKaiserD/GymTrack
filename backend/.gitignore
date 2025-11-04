@@ -1,2 +1,8 @@
+# Archivos de entorno
 .env
-node_modules
+.env.local
+.env.*.local
+
+# Archivos de configuración del sistema
+.DS_Store
+node_modules/
