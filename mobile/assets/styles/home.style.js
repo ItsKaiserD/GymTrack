@@ -154,6 +154,17 @@ cardMeta: {
   fontSize: 12,
   color: '#6b7280',
 },
+statusPill: {
+  alignSelf: "flex-start",
+  paddingHorizontal: 10,
+  paddingVertical: 4,
+  borderRadius: 999,
+  marginTop: 6,
+},
+statusPillText: {
+  fontSize: 12,
+  fontWeight: "700",
+},
 });
 
 export default styles;

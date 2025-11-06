@@ -57,6 +57,25 @@ const index = () => {
       else setLoading(false);
     }
   };
+
+  const StatusPill = ({ status }) => {
+  const s = status || "Disponible"; // fallback para registros viejos
+  const map = {
+    "Disponible":   { bg: "#E8F5E9", txt: "#2E7D32" },
+    "Reservada":    { bg: "#FFF3E0", txt: "#EF6C00" },
+    "Mantenimiento":{ bg: "#FBE9E7", txt: "#D84315" },
+  };
+  const { bg, txt } = map[s] || map["Disponible"];
+  return (
+    <View style={{
+      alignSelf: "flex-start",
+      paddingHorizontal: 10, paddingVertical: 4,
+      borderRadius: 999, backgroundColor: bg, marginTop: 6
+    }}>
+      <Text style={{ color: txt, fontWeight: "600", fontSize: 12 }}>{s}</Text>
+    </View>
+  );
+};
   
   useEffect(() => {
     fetchMachines()
@@ -67,50 +86,19 @@ const index = () => {
     fetchMachines(page + 1, false);
   };
 
-  //const renderItem = ({ item }) => (
-    //<View style={styles.bookCard}>
-      //<View style={styles.bookHeader}>
-        //<View style={styles.userInfo}>
-          //<Text style={styles.username}>{item.name}</Text>
-        //</View>
-      //</View>
-
-      //<View>
-        //<Image source={{ uri: item.image }} style={styles.bookImage} contentFit="contain"/>
-      //</View>
-
-      //<View style={styles.bookDetails}>
-        //<Text style={styles.bookTitle}>{item.title}</Text>
-        //<Text style={styles.date}>Creada el: {formatPublishDate(item.createdAt)}</Text>
-      //</View>
-    //</View>
-  //);
-
-  //const renderItem = ({ item }) => (
-  //<View style={[styles.card, { position: 'relative' }]}>
-    //<Image
-      //source={{ uri: item.image }}
-      //style={[styles.bookImage, { position: 'relative', width: '100%', height: 180 }]}
-      //contentFit="cover"
-      //transition={200}
-    ///>
-    //<Text style={styles.title}>{item.name}</Text>
-    //<Text style={styles.meta}>Creada por: {item?.user?.username || "N/A"}</Text>
-  //</View>
-//);
-
-const renderItem = ({ item }) => (
-  <View style={styles.card}>
-    <Image
-      source={{ uri: item.image }}
-      style={styles.cardImage}
-      contentFit="cover"
-      transition={200}
-    />
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <Image
+        source={{ uri: item.image }}
+        style={styles.cardImage}
+        contentFit="cover"
+        transition={200}
+      />
 
     <View style={styles.cardBody}>
       <Text style={styles.cardTitle}>{item.name}</Text>
       <Text style={styles.cardMeta}>Creada por: {item?.user?.username || "N/A"}</Text>
+      <StatusPill status={item.status} />
     </View>
   </View>
 );

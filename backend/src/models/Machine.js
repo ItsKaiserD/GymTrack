@@ -15,6 +15,11 @@ const machineSchema = new mongoose.Schema(
         ref: "User",
         required: true,
     },
+    status: {
+      type: String,
+      enum: ["Disponible", "Reservada", "Mantenimiento"],
+      default: "Disponible",
+    },
 }, { timestamps: true });
 
 const Machine = mongoose.model("Machine", machineSchema);
