@@ -124,5 +124,32 @@ router.post("/_probe", (req, res) => {
   });
 });
 
+// PATCH /api/machines/:id/status  (trainer/admin)
+router.patch("/:id/status", protectRoute, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const raw = String(req.body.status || "").trim();
+    const ALLOWED = new Set(["Disponible", "Reservada", "Mantenimiento"]);
+
+    if (!ALLOWED.has(raw)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+
+    const updated = await Machine.findByIdAndUpdate(
+      id,
+      { $set: { status: raw } },
+      { new: true }
+    )
+      .populate("user", "username email role")
+      .lean();
+
+    if (!updated) return res.status(404).json({ message: "Máquina no encontrada" });
+    return res.json(updated);
+  } catch (e) {
+    console.error("[machines PATCH /:id/status] error:", e.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 export default router;

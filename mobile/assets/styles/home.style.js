@@ -165,6 +165,29 @@ statusPillText: {
   fontSize: 12,
   fontWeight: "700",
 },
+actionRow: {
+  flexDirection: "row",
+  gap: 10,
+  marginTop: 10,
+},
+actionBtn: {
+  flexGrow: 1,
+  paddingVertical: 10,
+  borderRadius: 10,
+  alignItems: "center",
+  justifyContent: "center",
+},
+actionBtnPrimary: {
+  backgroundColor: "#2563EB", // azul
+},
+actionBtnWarn: {
+  backgroundColor: "#F59E0B", // naranja
+},
+actionBtnText: {
+  color: "#fff",
+  fontWeight: "700",
+},
+
 });
 
 export default styles;

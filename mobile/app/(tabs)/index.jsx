@@ -75,8 +75,35 @@ const index = () => {
       <Text style={{ color: txt, fontWeight: "600", fontSize: 12 }}>{s}</Text>
     </View>
   );
-};
+  };
   
+  // helper para actualizar estado en backend
+  const updateStatus = async (id, nextStatus) => {
+    try {
+      const res = await fetch(`${API_URL}/machines/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Error actualizando estado");
+
+      // Actualiza en memoria la máquina modificada
+      setMachines((prev) => prev.map(m => (m._id === data._id ? data : m)));
+      } catch (e) {
+      console.log("Error actualizando estado:", e.message);
+      // Opcional: Alert.alert("Error", e.message)
+    }
+  };
+
+  // atajos
+  const onReservar = (id) => updateStatus(id, "Reservada");
+  const onReportar = (id) => updateStatus(id, "Mantenimiento");
+
+
   useEffect(() => {
     fetchMachines()
   }, [])
@@ -99,6 +126,27 @@ const renderItem = ({ item }) => (
       <Text style={styles.cardTitle}>{item.name}</Text>
       <Text style={styles.cardMeta}>Creada por: {item?.user?.username || "N/A"}</Text>
       <StatusPill status={item.status} />
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionBtnPrimary]}
+          onPress={() => onReservar(item._id)}
+          disabled={item.status === "Reservada"}
+        >
+          <Text style={styles.actionBtnText}>
+            {item.status === "Reservada" ? "Reservada" : "Reservar"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionBtnWarn]}
+          onPress={() => onReportar(item._id)}
+          disabled={item.status === "Mantenimiento"}
+        >
+          <Text style={styles.actionBtnText}>
+            {item.status === "Mantenimiento" ? "En mantención" : "Reportar"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   </View>
 );
