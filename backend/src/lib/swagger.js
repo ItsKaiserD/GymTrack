@@ -12,7 +12,7 @@ const options = {
     servers: [
       { url: "http://localhost:3000", description: "Local" },
       // Cambia por tu dominio en Render:
-      { url: "https://api-gymtrack-z1ja.onrender.com", description: "Render" },
+      { url: "https://gymtrack-fjhi.onrender.com", description: "Render" },
     ],
     components: {
       securitySchemes: {
