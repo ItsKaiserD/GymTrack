@@ -9,6 +9,7 @@ import dns from "dns";
 import net from "net";
 import { swaggerSpec } from "./lib/swagger.js";
 import swaggerUi from "swagger-ui-express";
+import cors from "cors";
 
 const app = express();
 app.use(cors({
