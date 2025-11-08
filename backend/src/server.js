@@ -7,9 +7,25 @@ import authRoutes from "./routes/authRoutes.js";
 import machineRoutes from "./routes/machineRoutes.js";
 import dns from "dns";
 import net from "net";
+import { swaggerSpec } from "./lib/swagger.js";
+import swaggerUi from "swagger-ui-express";
 
 const app = express();
+app.use(cors({
+  origin: "*",
+  methods: ["GET","POST","PATCH","PUT","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"],
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Swagger JSON
+app.get("/openapi.json", (_req, res) => res.json(swaggerSpec));
+
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+}));
 
 function parseAdminEmails(envValue) {
   if (!envValue) return [];

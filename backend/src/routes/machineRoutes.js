@@ -5,6 +5,116 @@ import cloudinary from "../lib/cloudinary.js";
 import protectRoute from "../middleware/auth.middleware.js";
 import Machine from "../models/Machine.js";
 
+/**
+ * @openapi
+ * /api/machines:
+ *   get:
+ *     summary: Lista máquinas (paginadas)
+ *     tags: [Machines]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MachineListResponse'
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ */
+
+/**
+ * @openapi
+ * /api/machines:
+ *   post:
+ *     summary: Crea una máquina (con imagen subida)
+ *     tags: [Machines]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [name, image]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *               status:
+ *                 type: string
+ *                 enum: [Disponible, Reservada, Mantenimiento]
+ *                 description: Si no se envía, usa default "Disponible".
+ *     responses:
+ *       201:
+ *         description: Creada
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/MachineCreateResponse' }
+ *       400:
+ *         description: Error de validación
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       401:
+ *         description: No autorizado
+ */
+
+/**
+ * @openapi
+ * /api/machines/{id}/status:
+ *   patch:
+ *     summary: Actualiza el estado de una máquina
+ *     tags: [Machines]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [Disponible, Reservada, Mantenimiento]
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Machine' }
+ *       400:
+ *         description: Estado inválido
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       401:
+ *         description: No autorizado
+ *       404:
+ *         description: No encontrada
+ */
+
 console.log("[machineRoutes] VERSION=v8");
 const router = express.Router();
 

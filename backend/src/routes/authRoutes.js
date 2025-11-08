@@ -3,6 +3,32 @@ import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import { notifyAdminsByEmail } from "../lib/mailer.js";
 
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     summary: Iniciar sesión
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/LoginResponse' }
+ *       401:
+ *         description: Credenciales inválidas
+ */
+
 const router = express.Router();
 
 const ADMIN_WHITELIST = (process.env.ADMIN_EMAILS || "")
