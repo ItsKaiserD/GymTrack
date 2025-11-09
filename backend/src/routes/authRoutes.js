@@ -28,6 +28,57 @@ import { notifyAdminsByEmail } from "../lib/mailer.js";
  *       401:
  *         description: Credenciales inválidas
  */
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     summary: Crear una nueva cuenta de usuario
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: entrenador01
+ *               email:
+ *                 type: string
+ *                 example: entrenador01@example.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *               role:
+ *                 type: string
+ *                 enum: [admin, trainer]
+ *                 example: trainer
+ *                 description: Cuentas creadas desde el sistema quedan como "trainer", no se puede
+ *                  registrar "admin" desde register público.
+ *     responses:
+ *       201:
+ *         description: Usuario registrado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/AuthUser'
+ *       400:
+ *         description: Datos inválidos o usuario ya existente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 
 const router = express.Router();
 
