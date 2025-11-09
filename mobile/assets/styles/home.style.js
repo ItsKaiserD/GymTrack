@@ -187,6 +187,24 @@ actionBtnText: {
   color: "#fff",
   fontWeight: "700",
 },
+reserveRow: {
+  flexDirection: "row",
+  gap: 8,
+  marginTop: 10,
+  flexWrap: "wrap",
+},
+reserveChip: {
+  paddingVertical: 8,
+  paddingHorizontal: 12,
+  borderRadius: 999,
+  backgroundColor: "#EEF2FF",
+  borderWidth: 1,
+  borderColor: "#C7D2FE",
+},
+reserveChipText: {
+  fontWeight: "700",
+  color: "#3730A3",
+},
 
 });
 

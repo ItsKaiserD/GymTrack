@@ -20,6 +20,29 @@ const index = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true); 
+  const [now, setNow] = useState(Date.now());
+
+  const DURATION_OPTIONS = [15, 30, 45];
+
+  const reserveWithMinutes = async (id, minutes) => {
+  try {
+    const res = await fetch(`${API_URL}/machines/${id}/reserve`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ minutes }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+    // refresca elemento en memoria
+    setMachines(prev => prev.map(m => (m._id === data._id ? data : m)));
+  } catch (e) {
+    console.log("Error al reservar:", e.message);
+    // Alert.alert("Error", e.message);
+  }
+  };
 
   const fetchMachines = async(pageNum=1, refresh=false) => {
     try {
@@ -108,6 +131,20 @@ const index = () => {
     fetchMachines()
   }, [])
 
+  useEffect(() => {
+  const t = setInterval(() => setNow(Date.now()), 30_000); // cada 30s (o 60s)
+  return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+  const timer = setInterval(() => {
+    // refresca liviano la página 1
+    fetchMachines(1, true);
+  }, 60_000);
+  return () => clearInterval(timer);
+  }, [token]);
+
+
   const handleLoadMore = () => {
     if (loading || refreshing || !hasMore) return;
     fetchMachines(page + 1, false);
@@ -126,17 +163,25 @@ const renderItem = ({ item }) => (
       <Text style={styles.cardTitle}>{item.name}</Text>
       <Text style={styles.cardMeta}>Creada por: {item?.user?.username || "N/A"}</Text>
       <StatusPill status={item.status} />
-      <View style={styles.actionRow}>
+      {item.status === "Reservada" && item.reservationExpiresAt ? (
+      <Text style={styles.cardMeta}>
+        Restan {Math.max(0, Math.ceil((new Date(item.reservationExpiresAt).getTime() - now) / 60000))} min
+      </Text>
+      ) : null}
+      {item.status === "Disponible" ? (
+      <View style={styles.reserveRow}>
+        {DURATION_OPTIONS.map((min) => (
         <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnPrimary]}
-          onPress={() => onReservar(item._id)}
-          disabled={item.status === "Reservada"}
+          key={min}
+          style={styles.reserveChip}
+          onPress={() => reserveWithMinutes(item._id, min)}
         >
-          <Text style={styles.actionBtnText}>
-            {item.status === "Reservada" ? "Reservada" : "Reservar"}
-          </Text>
+          <Text style={styles.reserveChipText}>{min} min</Text>
         </TouchableOpacity>
-
+        ))}
+      </View>
+      ) : (
+      <View style={styles.actionRow}>
         <TouchableOpacity
           style={[styles.actionBtn, styles.actionBtnWarn]}
           onPress={() => onReportar(item._id)}
@@ -147,6 +192,7 @@ const renderItem = ({ item }) => (
           </Text>
         </TouchableOpacity>
       </View>
+      )}
     </View>
   </View>
 );

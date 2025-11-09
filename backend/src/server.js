@@ -1,6 +1,7 @@
 import express from "express";
 import { connectDB } from "./lib/db.js";
 import User from "./models/User.js";
+import Machine from "./models/Machine.js";
 import crypto from "crypto";
 import { sendEmail, notifyAdminsByEmail } from "./lib/mailer.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -96,6 +97,31 @@ async function seedAdmins() {
   }
 }
 
+function startReservationCleaner() {
+  const TICK_MS = 60 * 1000; // cada 1 minuto
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const res = await Machine.updateMany(
+        { status: "Reservada", reservationExpiresAt: { $lte: now } },
+        {
+          $set: {
+            status: "Disponible",
+            reservedBy: null,
+            reservationStartedAt: null,
+            reservationExpiresAt: null,
+          },
+        }
+      );
+      if (res.modifiedCount) {
+        console.log(`[cleaner] liberadas ${res.modifiedCount} reservas expiradas`);
+      }
+    } catch (e) {
+      console.error("[cleaner] error:", e.message);
+    }
+  }, TICK_MS);
+}
+
 app.use("/api/auth", authRoutes);
 app.use("/api/machines", machineRoutes);
 
@@ -157,6 +183,7 @@ app.get("/api/test-send", async (req, res) => {
   try {
     await connectDB();        // 1) conectar
     await seedAdmins();       // 2) sembrar admins (ya conectados)
+    startReservationCleaner(); // 3) iniciar limpiador de reservas
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log(`API listening on ${PORT}`));
   } catch (err) {

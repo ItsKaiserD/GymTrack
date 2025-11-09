@@ -20,6 +20,10 @@ const machineSchema = new mongoose.Schema(
       enum: ["Disponible", "Reservada", "Mantenimiento"],
       default: "Disponible",
     },
+    // NUEVO: metadatos de reserva
+    reservedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    reservationStartedAt: { type: Date, default: null },
+    reservationExpiresAt: { type: Date, default: null },
 }, { timestamps: true });
 
 const Machine = mongoose.model("Machine", machineSchema);

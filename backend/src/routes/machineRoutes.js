@@ -114,6 +114,41 @@ import Machine from "../models/Machine.js";
  *       404:
  *         description: No encontrada
  */
+/**
+ * @openapi
+ * /api/machines/{id}/reserve:
+ *   post:
+ *     summary: Reservar una máquina por minutos (bloques de 15)
+ *     tags: [Machines]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [minutes]
+ *             properties:
+ *               minutes:
+ *                 type: integer
+ *                 description: "Múltiplos de 15 entre 15 y 180."
+ *                 example: 30
+ *     responses:
+ *       200:
+ *         description: Reservada
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Machine' }
+ *       400: { description: Duración inválida }
+ *       401: { description: No autorizado }
+ *       409: { description: Ocupada o no expirada }
+ */
 
 console.log("[machineRoutes] VERSION=v8");
 const router = express.Router();
@@ -261,5 +296,62 @@ router.patch("/:id/status", protectRoute, async (req, res) => {
   }
 });
 
+// POST /api/machines/:id/reserve
+router.post("/:id/reserve", protectRoute, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // minutos solicitados
+    const minutes = Number(req.body?.minutes);
+    const isValid =
+      Number.isInteger(minutes) &&
+      minutes % 15 === 0 &&
+      minutes >= 15 &&
+      minutes <= 180;
+
+    if (!isValid) {
+      return res.status(400).json({
+        message: "Duración inválida. Usa múltiplos de 15 entre 15 y 180.",
+      });
+    }
+
+    const now = new Date();
+    const expires = new Date(now.getTime() + minutes * 60 * 1000);
+
+    // solo si está Disponible o Reservada pero ya expirada
+    const filter = {
+      _id: id,
+      $or: [
+        { status: "Disponible" },
+        { status: "Reservada", reservationExpiresAt: { $lte: now } },
+      ],
+    };
+
+    const update = {
+      $set: {
+        status: "Reservada",
+        reservedBy: req.user._id,
+        reservationStartedAt: now,
+        reservationExpiresAt: expires,
+      },
+    };
+
+    const doc = await Machine.findOneAndUpdate(filter, update, { new: true })
+      .populate("user", "username email role")
+      .populate("reservedBy", "username email role")
+      .lean();
+
+    if (!doc) {
+      return res
+        .status(409)
+        .json({ message: "No se puede reservar (ocupada o no expirada)." });
+    }
+
+    return res.json(doc);
+  } catch (e) {
+    console.error("[reserve] error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 
 export default router;
