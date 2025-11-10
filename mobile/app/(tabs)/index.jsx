@@ -179,6 +179,13 @@ const renderItem = ({ item }) => (
           <Text style={styles.reserveChipText}>{min} min</Text>
         </TouchableOpacity>
         ))}
+        {/* NUEVO: botón "Reportar" al lado, mismo formato chip */}
+        <TouchableOpacity
+          style={[styles.reserveChip, styles.reportChip]}
+          onPress={() => onReportar(item._id)}
+        >
+          <Text style={[styles.reserveChipText, styles.reportChipText]}>Reportar</Text>
+        </TouchableOpacity>
       </View>
       ) : (
       <View style={styles.actionRow}>

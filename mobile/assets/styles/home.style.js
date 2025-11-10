@@ -205,7 +205,13 @@ reserveChipText: {
   fontWeight: "700",
   color: "#3730A3",
 },
-
+reportChip: {
+  backgroundColor: "#FEF3C7", // amarillo suave
+  borderColor: "#F59E0B",
+},
+reportChipText: {
+  color: "#B45309",
+},
 });
 
 export default styles;
