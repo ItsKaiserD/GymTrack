@@ -149,6 +149,26 @@ import Machine from "../models/Machine.js";
  *       401: { description: No autorizado }
  *       409: { description: Ocupada o no expirada }
  */
+/**
+ * @openapi
+ * /api/machines/my-reservations:
+ *   get:
+ *     summary: Lista las máquinas reservadas por el usuario actual
+ *     tags: [Machines]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Machine'
+ *       401:
+ *         description: No autorizado
+ */
 
 console.log("[machineRoutes] VERSION=v8");
 const router = express.Router();
@@ -350,6 +370,25 @@ router.post("/:id/reserve", protectRoute, async (req, res) => {
     return res.json(doc);
   } catch (e) {
     console.error("[reserve] error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET /api/machines/my-reservations
+router.get("/my-reservations", protectRoute, async (req, res) => {
+  try {
+    const now = new Date();
+    const docs = await Machine.find({
+      reservedBy: req.user._id,                  // reservadas por el usuario actual
+      status: "Reservada",                       // estado actual reservado
+    })
+      .select("_id name image status reservationExpiresAt reservationStartedAt")
+      .sort({ reservationExpiresAt: 1 })
+      .lean();
+
+    return res.json(docs);
+  } catch (e) {
+    console.error("[machines GET /my-reservations] error:", e);
     return res.status(500).json({ message: "Server error" });
   }
 });
