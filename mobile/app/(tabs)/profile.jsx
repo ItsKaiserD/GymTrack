@@ -1,4 +1,4 @@
-import { View, Text, Alert, TouchableOpacity } from 'react-native'
+import { View, Text, Alert, TouchableOpacity, Image } from 'react-native'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { API_URL } from '../../constants/api'
@@ -8,10 +8,9 @@ import React from 'react'
 import styles from '@/assets/styles/profile.style';
 import ProfileHeader from '../../components/ProfileHeader'
 import LogoutButton from '../../components/LogoutButton'
-import { FlatList } from 'react-native-gesture-handler'
+import { FlatList, RefreshControl } from 'react-native-gesture-handler'
 import { Ionicons } from '@expo/vector-icons'
 import COLORS from '../../constants/colors'
-import { Image } from 'expo-image'
 
 
 export default function Profile(){
@@ -62,22 +61,50 @@ export default function Profile(){
     }, [])
 
     const renderMachineItem = ({ item }) => {
-        const remainingMin = item.reservationExpiresAt
-        ? Math.max(0, Math.ceil((new Date(item.reservationExpiresAt).getTime() - now) / 60000))
-        : 0;
+        // item viene de Reservation: tiene machine, startAt, endAt, status
+        const { machine, startAt, endAt, status } = item;
+
+        const start = startAt ? new Date(startAt) : null;
+        const end = endAt ? new Date(endAt) : null;
+        const nowDate = new Date(now);
+
+        let infoLinea = "";
+        if (start && end) {
+            if (nowDate < start) {
+            const mins = Math.max(0, Math.ceil((start.getTime() - nowDate.getTime()) / 60000));
+            infoLinea = `Comienza en ${mins} min`;
+            } else if (nowDate >= start && nowDate <= end) {
+                const mins = Math.max(0, Math.ceil((end.getTime() - nowDate.getTime()) / 60000));
+                infoLinea = `Termina en ${mins} min`;
+            } else {
+                infoLinea = "Reserva finalizada";
+            }
+        }
+
+        const fechaTexto = start
+            ? start.toLocaleString("es-CL", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+            })
+        : "";
 
         return (
             <View style={styles.bookItem}>
-                <Image source={{ uri: item.image }} style={styles.bookImage} />
+                <Image
+                    source={{ uri: machine.image }}
+                    style={styles.bookImage}
+                />
                 <View style={styles.bookInfo}>
-                    <Text style={styles.bookTitle}>{item.name}</Text>
-                    <Text style={styles.bookSubtitle}>
-                        Estado: {item.status || "Reservada"}
-                    </Text>
-                    {item.status === "Reservada" && item.reservationExpiresAt ? (
-                    <Text style={styles.bookMeta}>
-                        Restan {remainingMin} min
-                    </Text>
+                    <Text style={styles.bookTitle}>{machine?.name || "Máquina"}</Text>
+                    {fechaTexto ? (
+                    <Text style={styles.bookSubtitle}>{fechaTexto}</Text>
+                    ) : null}
+                    <Text style={styles.bookSubtitle}>Estado: {status || "Reservada"}</Text>
+                    {infoLinea ? (
+                    <Text style={styles.bookMeta}>{infoLinea}</Text>
                     ) : null}
                 </View>
             </View>
@@ -101,8 +128,14 @@ export default function Profile(){
                 keyExtractor={(item) => item._id}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.bookList}
-                refreshing={refreshing}
-                onRefresh={onRefresh}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[COLORS.primary]}
+                        tintColor={COLORS.primary}
+                    />
+                }
                 ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                     <Ionicons name='help-outline' size={50} color={COLORS.textSecondary}/>

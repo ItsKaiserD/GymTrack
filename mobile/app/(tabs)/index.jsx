@@ -284,45 +284,45 @@ const renderItem = ({ item }) => (
           </View>
         </View>
 
-    {showDatePicker && (
-      <DateTimePicker
-        value={selected}
-        mode="date"
-        display="default"
-        onChange={(event, date) => {
-          setShowDatePicker(false);
-          if (date) {
-            // preserva hora/minutos actuales
-            const newDate = new Date(date);
-            newDate.setHours(
-              selected.getHours(),
-              selected.getMinutes(),
-              0,
-              0
-            );
-            setSelectedDate(newDate);
-          }
-        }}
-      />
-    )}
+        {showDatePicker && (
+          <DateTimePicker
+            value={selected}
+            mode="date"
+            display="default"
+            onChange={(event, date) => {
+              setShowDatePicker(false);
+              if (date) {
+              // preserva hora/minutos actuales
+              const newDate = new Date(date);
+              newDate.setHours(
+                selected.getHours(),
+                selected.getMinutes(),
+                0,
+                0
+              );
+              setSelectedDate(newDate);
+              }
+            }}
+          />
+        )}
 
-    {showTimePicker && (
-      <DateTimePicker
-        value={selected}
-        mode="time"
-        is24Hour={true}
-        display="default"
-        onChange={(event, time) => {
-          setShowTimePicker(false);
-          if (time) {
-            const newDate = new Date(selectedDate);
-            newDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
-            setSelectedDate(newDate);
-          }
-        }}
-      />
-    )}
-  </View>
+        {showTimePicker && (
+        <DateTimePicker
+          value={selected}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={(event, time) => {
+            setShowTimePicker(false);
+            if (time) {
+              const newDate = new Date(selectedDate);
+              newDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
+              setSelectedDate(newDate);
+            }
+          }}
+        />
+        )}
+    </View>
 }
         ListFooterComponent={
           hasMore && machines.length > 0 ? (
