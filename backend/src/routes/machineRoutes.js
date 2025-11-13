@@ -390,7 +390,7 @@ router.post("/:id/reserve", protectRoute, async (req, res) => {
 
     // OJO: aquí asumimos que date+time están en UTC o en la tz del servidor.
     // Si quieres manejar zona horaria de Chile, después se puede afinar.
-    const startAt = new Date(`${date}T${time}:00.000Z`);
+    const startAt = new Date(`${date}T${time}:00`);
     if (Number.isNaN(startAt.getTime())) {
       return res.status(400).json({ message: "Fecha u hora inválidas." });
     }
