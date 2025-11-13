@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Image } from 'expo-image'
@@ -23,10 +24,12 @@ const index = () => {
   const [now, setNow] = useState(Date.now());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedMinutes, setSelectedMinutes] = useState(30); // 15, 30, 45
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const DURATION_OPTIONS = [15, 30, 45];
 
-  const reserveWithDateTime = async (machineId, date, time, minutes) => {
+  const reserveWithDateTime = async (machineId, startAtISO, minutes) => {
   try {
     const res = await fetch(`${API_URL}/machines/${machineId}/reserve`, {
       method: "POST",
@@ -34,13 +37,12 @@ const index = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ date, time, minutes }), // date: "2025-11-20", time: "10:30"
+      body: JSON.stringify({ startAtISO, minutes }),
     });
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
 
-    // Aquí puedes mostrar un mensaje o actualizar listas de reservas.
     Alert.alert("Reserva creada", "Tu reserva fue agendada correctamente");
   } catch (e) {
     console.log("Error al reservar:", e.message);
@@ -131,11 +133,18 @@ const index = () => {
   const onReportar = (id) => updateStatus(id, "Mantenimiento");
 
   const handleReserve = (machineId, minutes) => {
-  const d = selectedDate;        // aquí puedes usar la fecha/hora que elija el usuario
-  const dateStr = d.toISOString().slice(0, 10);        // "YYYY-MM-DD"
-  const timeStr = d.toTimeString().slice(0, 5);        // "HH:mm"
+  let d = new Date(selectedDate);
 
-  reserveWithDateTime(machineId, dateStr, timeStr, minutes);
+  // Si por cualquier motivo la fecha/hora elegida quedó en el pasado,
+  // la empujamos 5 minutos al futuro para evitar el error.
+  const nowLocal = new Date();
+  if (d <= nowLocal) {
+    d = new Date(nowLocal.getTime() + 5 * 60 * 1000);
+    setSelectedDate(d);
+  }
+
+  const startAtISO = d.toISOString();
+  reserveWithDateTime(machineId, startAtISO, minutes);
   };
 
   useEffect(() => {
@@ -216,6 +225,17 @@ const renderItem = ({ item }) => (
 
   if (loading) return <Loader/>
 
+  const selected = new Date(selectedDate);
+  const formattedDate = selected.toLocaleDateString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const formattedTime = selected.toLocaleTimeString("es-CL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -238,8 +258,72 @@ const renderItem = ({ item }) => (
           <View style={styles.header}>
             <Text style={styles.headerTitle}>GymTrack</Text>
             <Text style={styles.headerSubtitle}>Trainer View</Text>
+
+          <View style={{ marginTop: 12 }}>
+            <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>
+              Reserva para:
+            </Text>
+            <Text style={{ fontSize: 16, fontWeight: "600" }}>
+              {formattedDate} a las {formattedTime}
+            </Text>
+
+          <View style={{ flexDirection: "row", marginTop: 8, gap: 8 }}>
+            <TouchableOpacity
+              style={styles.reserveChip}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.reserveChipText}>Cambiar fecha</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.reserveChip}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text style={styles.reserveChipText}>Cambiar hora</Text>
+            </TouchableOpacity>
           </View>
-        }
+        </View>
+
+    {showDatePicker && (
+      <DateTimePicker
+        value={selected}
+        mode="date"
+        display="default"
+        onChange={(event, date) => {
+          setShowDatePicker(false);
+          if (date) {
+            // preserva hora/minutos actuales
+            const newDate = new Date(date);
+            newDate.setHours(
+              selected.getHours(),
+              selected.getMinutes(),
+              0,
+              0
+            );
+            setSelectedDate(newDate);
+          }
+        }}
+      />
+    )}
+
+    {showTimePicker && (
+      <DateTimePicker
+        value={selected}
+        mode="time"
+        is24Hour={true}
+        display="default"
+        onChange={(event, time) => {
+          setShowTimePicker(false);
+          if (time) {
+            const newDate = new Date(selectedDate);
+            newDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
+            setSelectedDate(newDate);
+          }
+        }}
+      />
+    )}
+  </View>
+}
         ListFooterComponent={
           hasMore && machines.length > 0 ? (
             <ActivityIndicator style={styles.footerLeader} size="small" color={COLORS.primary}/>

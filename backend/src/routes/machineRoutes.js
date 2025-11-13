@@ -365,7 +365,7 @@ router.patch("/:id/status", protectRoute, async (req, res) => {
 router.post("/:id/reserve", protectRoute, async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, time, minutes } = req.body;
+    const { startAtISO, minutes } = req.body;
 
     // --- 1) Validar duración ---
     const mins = Number(minutes);
@@ -381,20 +381,17 @@ router.post("/:id/reserve", protectRoute, async (req, res) => {
       });
     }
 
-    // --- 2) Validar fecha y hora ---
-    if (!date || !time) {
+    // --- 2) Validar fecha/hora ---
+    if (!startAtISO) {
       return res
         .status(400)
-        .json({ message: "Debe enviar 'date' (YYYY-MM-DD) y 'time' (HH:mm)." });
+        .json({ message: "Debe enviar 'startAtISO' (ISO 8601)." });
     }
 
-    // OJO: aquí asumimos que date+time están en UTC o en la tz del servidor.
-    // Si quieres manejar zona horaria de Chile, después se puede afinar.
-    const startAt = new Date(`${date}T${time}:00`);
+    const startAt = new Date(startAtISO);
     if (Number.isNaN(startAt.getTime())) {
-      return res.status(400).json({ message: "Fecha u hora inválidas." });
+      return res.status(400).json({ message: "Fecha/hora inválidas." });
     }
-    const endAt = new Date(startAt.getTime() + mins * 60 * 1000);
 
     const now = new Date();
     if (startAt <= now) {
@@ -403,21 +400,21 @@ router.post("/:id/reserve", protectRoute, async (req, res) => {
         .json({ message: "La reserva debe ser en el futuro." });
     }
 
+    const endAt = new Date(startAt.getTime() + mins * 60 * 1000);
+
     // --- 3) Verificar que la máquina existe ---
     const machine = await Machine.findById(id).lean();
     if (!machine) {
       return res.status(404).json({ message: "Máquina no encontrada." });
     }
 
-    // Opcional: no permitir reservas si la máquina está en mantenimiento
     if (machine.status === "Mantenimiento") {
       return res.status(409).json({
         message: "La máquina está en mantención. No se puede reservar.",
       });
     }
 
-    // --- 4) Verificar solapamientos de reservas para esa máquina ---
-    // Buscamos reservas que se crucen con [startAt, endAt)
+    // --- 4) Verificar solapamientos ---
     const overlap = await Reservation.findOne({
       machine: id,
       status: { $in: ["Reservada", "Activa"] },
@@ -444,7 +441,6 @@ router.post("/:id/reserve", protectRoute, async (req, res) => {
       status: "Reservada",
     });
 
-    // Podemos devolver la reserva con info de la máquina
     const populated = await reservation.populate([
       { path: "machine", select: "name image" },
       { path: "user", select: "username email role" },
