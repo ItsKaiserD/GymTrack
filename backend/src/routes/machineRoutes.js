@@ -4,6 +4,7 @@ import multer from "multer";
 import cloudinary from "../lib/cloudinary.js";
 import protectRoute from "../middleware/auth.middleware.js";
 import Machine from "../models/Machine.js";
+import Reservation from "../models/Reservation.js";
 
 /**
  * @openapi
@@ -118,7 +119,10 @@ import Machine from "../models/Machine.js";
  * @openapi
  * /api/machines/{id}/reserve:
  *   post:
- *     summary: Reservar una máquina por minutos (bloques de 15)
+ *     summary: Crear una reserva futura para una máquina
+ *     description: |
+ *       Crea una reserva en una fecha y hora específicas para la máquina indicada.
+ *       La duración debe ser un múltiplo de 15 minutos entre 15 y 180.
  *     tags: [Machines]
  *     security:
  *       - bearerAuth: []
@@ -126,48 +130,83 @@ import Machine from "../models/Machine.js";
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
+ *         description: ID de la máquina a reservar.
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [minutes]
+ *             required:
+ *               - date
+ *               - time
+ *               - minutes
  *             properties:
+ *               date:
+ *                 type: string
+ *                 example: "2025-11-20"
+ *                 description: Fecha de la reserva en formato YYYY-MM-DD.
+ *               time:
+ *                 type: string
+ *                 example: "10:30"
+ *                 description: Hora de inicio en formato HH:mm (24 horas).
  *               minutes:
  *                 type: integer
- *                 description: "Múltiplos de 15 entre 15 y 180."
  *                 example: 30
+ *                 description: Duración en minutos (múltiplos de 15, entre 15 y 180).
  *     responses:
- *       200:
- *         description: Reservada
+ *       201:
+ *         description: Reserva creada correctamente
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Machine' }
- *       400: { description: Duración inválida }
- *       401: { description: No autorizado }
- *       409: { description: Ocupada o no expirada }
+ *             schema:
+ *               $ref: '#/components/schemas/Reservation'
+ *       400:
+ *         description: Datos inválidos (fecha/hora/duración)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Máquina no encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Ya existe una reserva en ese horario o máquina en mantención
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Error de servidor
  */
 /**
  * @openapi
  * /api/machines/my-reservations:
  *   get:
- *     summary: Lista las máquinas reservadas por el usuario actual
+ *     summary: Listar reservas futuras/actuales del usuario actual
  *     tags: [Machines]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: OK
+ *         description: Lista de reservas del usuario
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Machine'
+ *               $ref: '#/components/schemas/ReservationListResponse'
  *       401:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Error de servidor
  */
 
 console.log("[machineRoutes] VERSION=v8");
@@ -316,81 +355,127 @@ router.patch("/:id/status", protectRoute, async (req, res) => {
   }
 });
 
-// POST /api/machines/:id/reserve
+// Reserva futura de una máquina en fecha/hora concreta
+// Body esperado:
+// {
+//   "date": "2025-11-20",        // YYYY-MM-DD
+//   "time": "10:30",             // HH:mm (24h)
+//   "minutes": 30                // 15, 30, 45, ... (múltiplos de 15)
+// }
 router.post("/:id/reserve", protectRoute, async (req, res) => {
   try {
     const { id } = req.params;
+    const { date, time, minutes } = req.body;
 
-    // minutos solicitados
-    const minutes = Number(req.body?.minutes);
-    const isValid =
-      Number.isInteger(minutes) &&
-      minutes % 15 === 0 &&
-      minutes >= 15 &&
-      minutes <= 180;
+    // --- 1) Validar duración ---
+    const mins = Number(minutes);
+    const isValidDuration =
+      Number.isInteger(mins) &&
+      mins % 15 === 0 &&
+      mins >= 15 &&
+      mins <= 180; // por ejemplo, máx 3h
 
-    if (!isValid) {
+    if (!isValidDuration) {
       return res.status(400).json({
         message: "Duración inválida. Usa múltiplos de 15 entre 15 y 180.",
       });
     }
 
-    const now = new Date();
-    const expires = new Date(now.getTime() + minutes * 60 * 1000);
-
-    // solo si está Disponible o Reservada pero ya expirada
-    const filter = {
-      _id: id,
-      $or: [
-        { status: "Disponible" },
-        { status: "Reservada", reservationExpiresAt: { $lte: now } },
-      ],
-    };
-
-    const update = {
-      $set: {
-        status: "Reservada",
-        reservedBy: req.user._id,
-        reservationStartedAt: now,
-        reservationExpiresAt: expires,
-      },
-    };
-
-    const doc = await Machine.findOneAndUpdate(filter, update, { new: true })
-      .populate("user", "username email role")
-      .populate("reservedBy", "username email role")
-      .lean();
-
-    if (!doc) {
+    // --- 2) Validar fecha y hora ---
+    if (!date || !time) {
       return res
-        .status(409)
-        .json({ message: "No se puede reservar (ocupada o no expirada)." });
+        .status(400)
+        .json({ message: "Debe enviar 'date' (YYYY-MM-DD) y 'time' (HH:mm)." });
     }
 
-    return res.json(doc);
+    // OJO: aquí asumimos que date+time están en UTC o en la tz del servidor.
+    // Si quieres manejar zona horaria de Chile, después se puede afinar.
+    const startAt = new Date(`${date}T${time}:00.000Z`);
+    if (Number.isNaN(startAt.getTime())) {
+      return res.status(400).json({ message: "Fecha u hora inválidas." });
+    }
+    const endAt = new Date(startAt.getTime() + mins * 60 * 1000);
+
+    const now = new Date();
+    if (startAt <= now) {
+      return res
+        .status(400)
+        .json({ message: "La reserva debe ser en el futuro." });
+    }
+
+    // --- 3) Verificar que la máquina existe ---
+    const machine = await Machine.findById(id).lean();
+    if (!machine) {
+      return res.status(404).json({ message: "Máquina no encontrada." });
+    }
+
+    // Opcional: no permitir reservas si la máquina está en mantenimiento
+    if (machine.status === "Mantenimiento") {
+      return res.status(409).json({
+        message: "La máquina está en mantención. No se puede reservar.",
+      });
+    }
+
+    // --- 4) Verificar solapamientos de reservas para esa máquina ---
+    // Buscamos reservas que se crucen con [startAt, endAt)
+    const overlap = await Reservation.findOne({
+      machine: id,
+      status: { $in: ["Reservada", "Activa"] },
+      $or: [
+        {
+          startAt: { $lt: endAt },
+          endAt: { $gt: startAt },
+        },
+      ],
+    }).lean();
+
+    if (overlap) {
+      return res.status(409).json({
+        message: "Ya existe una reserva en ese horario para esta máquina.",
+      });
+    }
+
+    // --- 5) Crear la reserva ---
+    const reservation = await Reservation.create({
+      machine: id,
+      user: req.user._id,
+      startAt,
+      endAt,
+      status: "Reservada",
+    });
+
+    // Podemos devolver la reserva con info de la máquina
+    const populated = await reservation.populate([
+      { path: "machine", select: "name image" },
+      { path: "user", select: "username email role" },
+    ]);
+
+    return res.status(201).json(populated);
   } catch (e) {
-    console.error("[reserve] error:", e);
+    console.error("[machines POST /:id/reserve] error:", e);
     return res.status(500).json({ message: "Server error" });
   }
 });
 
-// GET /api/machines/my-reservations
+// Reservas futuras del usuario actual
 router.get("/my-reservations", protectRoute, async (req, res) => {
   try {
     const now = new Date();
-    const docs = await Machine.find({
-      reservedBy: req.user._id,                  // reservadas por el usuario actual
-      status: "Reservada",                       // estado actual reservado
+    const reservations = await Reservation.find({
+      user: req.user._id,
+      status: { $in: ["Reservada", "Activa"] },
+      endAt: { $gte: now }, // solo actuales/futuras
     })
-      .select("_id name image status reservationExpiresAt reservationStartedAt")
-      .sort({ reservationExpiresAt: 1 })
+      .populate("machine", "name image")
+      .sort({ startAt: 1 })
       .lean();
 
-    return res.json(docs);
+    return res.json(reservations);
   } catch (e) {
     console.error("[machines GET /my-reservations] error:", e);
     return res.status(500).json({ message: "Server error" });
   }
 });
+
 
 export default router;

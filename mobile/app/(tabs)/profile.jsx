@@ -107,7 +107,7 @@ export default function Profile(){
                 <View style={styles.emptyContainer}>
                     <Ionicons name='help-outline' size={50} color={COLORS.textSecondary}/>
                         <Text style={styles.emptyText}>No tienes reservas activas</Text>
-                        <TouchableOpacity style={styles.addButton} onPress={() => router.push("/index")}>
+                        <TouchableOpacity style={styles.addButton} onPress={() => router.push("/(tabs)")}>
                             <Text style={styles.addButtonText}>Reservar una máquina</Text>
                         </TouchableOpacity>
                 </View>

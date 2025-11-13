@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Image } from 'expo-image'
@@ -21,26 +21,30 @@ const index = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true); 
   const [now, setNow] = useState(Date.now());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedMinutes, setSelectedMinutes] = useState(30); // 15, 30, 45
 
   const DURATION_OPTIONS = [15, 30, 45];
 
-  const reserveWithMinutes = async (id, minutes) => {
+  const reserveWithDateTime = async (machineId, date, time, minutes) => {
   try {
-    const res = await fetch(`${API_URL}/machines/${id}/reserve`, {
+    const res = await fetch(`${API_URL}/machines/${machineId}/reserve`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ minutes }),
+      body: JSON.stringify({ date, time, minutes }), // date: "2025-11-20", time: "10:30"
     });
+
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-    // refresca elemento en memoria
-    setMachines(prev => prev.map(m => (m._id === data._id ? data : m)));
+
+    // Aquí puedes mostrar un mensaje o actualizar listas de reservas.
+    Alert.alert("Reserva creada", "Tu reserva fue agendada correctamente");
   } catch (e) {
     console.log("Error al reservar:", e.message);
-    // Alert.alert("Error", e.message);
+    Alert.alert("Error", e.message);
   }
   };
 
@@ -126,6 +130,13 @@ const index = () => {
   const onReservar = (id) => updateStatus(id, "Reservada");
   const onReportar = (id) => updateStatus(id, "Mantenimiento");
 
+  const handleReserve = (machineId, minutes) => {
+  const d = selectedDate;        // aquí puedes usar la fecha/hora que elija el usuario
+  const dateStr = d.toISOString().slice(0, 10);        // "YYYY-MM-DD"
+  const timeStr = d.toTimeString().slice(0, 5);        // "HH:mm"
+
+  reserveWithDateTime(machineId, dateStr, timeStr, minutes);
+  };
 
   useEffect(() => {
     fetchMachines()
@@ -174,12 +185,11 @@ const renderItem = ({ item }) => (
         <TouchableOpacity
           key={min}
           style={styles.reserveChip}
-          onPress={() => reserveWithMinutes(item._id, min)}
+          onPress={() => handleReserve(item._id, min)}   // ⬅ CAMBIO AQUÍ
         >
           <Text style={styles.reserveChipText}>{min} min</Text>
         </TouchableOpacity>
-        ))}
-        {/* NUEVO: botón "Reportar" al lado, mismo formato chip */}
+      ))}
         <TouchableOpacity
           style={[styles.reserveChip, styles.reportChip]}
           onPress={() => onReportar(item._id)}
