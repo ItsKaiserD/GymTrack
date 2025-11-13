@@ -16,7 +16,7 @@ import { Image } from 'expo-image'
 
 export default function Profile(){
     const [machines, setMachines] = useState([]);
-    const [loading, setIsLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const router = useRouter();
