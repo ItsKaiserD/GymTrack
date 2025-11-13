@@ -2,6 +2,7 @@ import express from "express";
 import { connectDB } from "./lib/db.js";
 import User from "./models/User.js";
 import Machine from "./models/Machine.js";
+import Reservation from "./models/Reservation.js";
 import crypto from "crypto";
 import { sendEmail, notifyAdminsByEmail } from "./lib/mailer.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -122,6 +123,74 @@ function startReservationCleaner() {
   }, TICK_MS);
 }
 
+function startReservationScheduler() {
+  const TICK_MS = 60 * 1000; // cada 1 minuto
+
+  setInterval(async () => {
+    try {
+      const now = new Date();
+
+      // 1) Activar reservas que deberían estar en curso
+      const toActivate = await Reservation.find({
+        status: "Reservada", // FUTURA
+        startAt: { $lte: now },
+        endAt: { $gt: now },
+      });
+
+      for (const r of toActivate) {
+        // marcar reserva como ACTIVA
+        await Reservation.updateOne(
+          { _id: r._id },
+          { $set: { status: "Activa" } }
+        );
+
+        // marcar máquina como Reservada y guardar info
+        await Machine.findByIdAndUpdate(r.machine, {
+          $set: {
+            status: "Reservada",
+            reservedBy: r.user,
+            reservationStartedAt: r.startAt,
+            reservationExpiresAt: r.endAt,
+          },
+        });
+      }
+
+      // 2) Completar reservas que ya terminaron
+      const toComplete = await Reservation.find({
+        status: "Activa",
+        endAt: { $lte: now },
+      });
+
+      for (const r of toComplete) {
+        // marcar reserva como COMPLETADA
+        await Reservation.updateOne(
+          { _id: r._id },
+          { $set: { status: "Completada" } }
+        );
+
+        // liberar la máquina
+        await Machine.findByIdAndUpdate(r.machine, {
+          $set: {
+            status: "Disponible",
+            reservedBy: null,
+            reservationStartedAt: null,
+            reservationExpiresAt: null,
+          },
+        });
+      }
+
+      if (toActivate.length || toComplete.length) {
+        console.log(
+          `[reservationScheduler] activadas=${toActivate.length} completadas=${toComplete.length}`
+        );
+      }
+    } catch (err) {
+      console.error("[reservationScheduler] error:", err.message);
+    }
+  }, TICK_MS);
+}
+
+
 app.use("/api/auth", authRoutes);
 app.use("/api/machines", machineRoutes);
 
@@ -184,6 +253,8 @@ app.get("/api/test-send", async (req, res) => {
     await connectDB();        // 1) conectar
     await seedAdmins();       // 2) sembrar admins (ya conectados)
     startReservationCleaner(); // 3) iniciar limpiador de reservas
+    startReservationScheduler(); // 4) iniciar planificador de reservas
+    // 5) iniciar servidor
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log(`API listening on ${PORT}`));
   } catch (err) {
