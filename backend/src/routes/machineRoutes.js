@@ -208,6 +208,81 @@ import Reservation from "../models/Reservation.js";
  *       500:
  *         description: Error de servidor
  */
+/**
+ * @openapi
+ * /api/machines/maintenance:
+ *   get:
+ *     summary: Listar máquinas en mantenimiento
+ *     description: Devuelve todas las máquinas cuyo status es "Mantenimiento".
+ *     tags: [Machines]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de máquinas en mantenimiento.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Machine'
+ *       401:
+ *         description: No autorizado.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Error del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+/**
+ * @openapi
+ * /api/machines/{id}/avail:
+ *   patch:
+ *     summary: Marcar una máquina como disponible
+ *     description: |
+ *       Cambia el status de una máquina a "Disponible" y limpia la información
+ *       de reserva (reservedBy, reservationStartedAt, reservationExpiresAt).
+ *     tags: [Machines]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la máquina a actualizar.
+ *     responses:
+ *       200:
+ *         description: Máquina actualizada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Machine'
+ *       401:
+ *         description: No autorizado.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Máquina no encontrada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Error del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 
 console.log("[machineRoutes] VERSION=v8");
 const router = express.Router();

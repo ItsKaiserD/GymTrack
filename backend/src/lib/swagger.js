@@ -80,39 +80,38 @@ const options = {
         Reservation: {
           type: "object",
           properties: {
-            _id: { type: "string" },
+            _id:  { type: "string" },
             machine: {
             type: "object",
             properties: {
-            _id: { type: "string" },
-            name: { type: "string" },
-            image: { type: "string" },
+              _id: { type: "string" },
+              name: { type: "string" },
+              image: { type: "string" },
+              },
+            },
+          user: {
+            type: "object",
+            properties: {
+              _id: { type: "string" },
+              username: { type: "string" },
+              email: { type: "string" },
+              role: { type: "string", enum: ["admin", "trainer"] },
+            },
+          },
+          startAt: { type: "string", format: "date-time" },
+          endAt: { type: "string", format: "date-time" },
+          status: {
+            type: "string",
+            enum: ["Reservada", "Activa", "Completada", "Cancelada"],
+          },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+          },
         },
+      ReservationListResponse: {
+        type: "array",
+        items: { $ref: "#/components/schemas/Reservation" },
       },
-    user: {
-      type: "object",
-      properties: {
-        _id: { type: "string" },
-        username: { type: "string" },
-        email: { type: "string" },
-        role: { type: "string", enum: ["admin", "trainer"] },
-      },
-    },
-    startAt: { type: "string", format: "date-time" },
-    endAt:   { type: "string", format: "date-time" },
-    status: {
-      type: "string",
-      enum: ["Reservada", "Activa", "Completada", "Cancelada"],
-    },
-    createdAt: { type: "string", format: "date-time" },
-    updatedAt: { type: "string", format: "date-time" },
-  },
-},
-ReservationListResponse: {
-  type: "array",
-  items: { $ref: "#/components/schemas/Reservation" },
-},
-
       },
     },
     security: [{ bearerAuth: [] }],
