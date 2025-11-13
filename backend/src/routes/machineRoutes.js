@@ -473,5 +473,39 @@ router.get("/my-reservations", protectRoute, async (req, res) => {
   }
 });
 
+// GET /machines/maintenance
+router.get("/maintenance", protectRoute, async (req, res) => {
+  try {
+    const machines = await Machine.find({ status: "Mantenimiento" }).sort({ name: 1 });
+    res.json(machines);
+  } catch (err) {
+    res.status(500).json({ message: "Error obteniendo máquinas en mantenimiento" });
+  }
+});
+
+router.patch("/:id/avail", protectRoute, async (req, res) => {
+  try {
+    const machine = await Machine.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          status: "Disponible",
+          reservedBy: null,
+          reservationStartedAt: null,
+          reservationExpiresAt: null
+        }
+      },
+      { new: true }
+    );
+
+    if (!machine) return res.status(404).json({ message: "Máquina no encontrada" });
+
+    res.json(machine);
+  } catch (err) {
+    res.status(500).json({ message: "Error al actualizar máquina" });
+  }
+});
+
+
 
 export default router;

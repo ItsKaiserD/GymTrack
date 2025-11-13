@@ -23,37 +23,66 @@ export default function Profile(){
     const { token } = useAuthStore();
 
     const fetchData = async () => {
-        try {
-            setIsLoading(true);
+    try {
+      setLoading(true);
 
-            const response = await fetch(`${API_URL}/machines/user`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+      // Traemos SOLO máquinas en mantenimiento
+      const res = await fetch(`${API_URL}/machines/maintenance`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-            const data = await response.json();
-            if(!response.ok) throw new Error(data.message || "Error al cargar máquinas");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Error cargando mantenimiento");
 
-            setMachines(data);
-        } catch(error) {
-            console.error("Error obteniendo datos: ", error); 
-            Alert.alert("Error", "Error al obtener los datos, por favor refresque la página");
-        } finally {
-            setIsLoading(false); 
-        }
+      setMachines(data);
+    } catch (err) {
+      console.error("Error obteniendo máquinas:", err);
+      Alert.alert("Error", "No se pudo cargar la lista de mantenimiento");
+    } finally {
+      setLoading(false);
     }
+    };
 
     useEffect(() => {
         fetchData();
     }, [])
 
-    const renderMachineItem = ({ item }) => {
-        <View style={styles.bookItem}>
-            <Image source={item.image} style={styles.bookImage}/>
-            <View style={styles.bookInfo}>
-                <Text style={styles.bookTitle}>{item.name}</Text>
-            </View>
-        </View>
+    const marcarDisponible = async (id) => {
+    try {
+      const res = await fetch(`${API_URL}/machines/${id}/avail`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      // Eliminar la máquina de la lista local
+      setMachines((prev) => prev.filter((m) => m._id !== id));
+    } catch (err) {
+      Alert.alert("Error", "No se pudo actualizar el estado");
     }
+    };
+
+    const renderMachineItem = ({ item }) => (
+        <View style={styles.bookItem}>
+        {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.bookImage} />
+        ) : null}
+
+        <View style={styles.bookInfo}>
+            <Text style={styles.bookTitle}>{item.name}</Text>
+            <Text style={styles.bookSubtitle}>Estado: {item.status}</Text>
+
+            <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => marcarDisponible(item._id)}
+            >
+                <Text style={styles.addButtonText}>Marcar Disponible</Text>
+            </TouchableOpacity>
+        </View>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
@@ -62,24 +91,21 @@ export default function Profile(){
 
             {/* REGISTERED MACHINES */}
             <View style={styles.booksHeader}>
-                <Text style={styles.booksTitle}>Tus Máquinas</Text>
+                <Text style={styles.booksTitle}>Máquinas Reportadas</Text>
                 <Text style={styles.booksCount}>{machines.length}</Text>
             </View>
 
-            <FlatList 
+            <FlatList
                 data={machines}
                 renderItem={renderMachineItem}
                 keyExtractor={(item) => item._id}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.bookList}
                 ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name='help-outline' size={50} color={COLORS.textSecondary}/>
-                        <Text style={styles.emptyText}>No has creado ninguna máquina</Text>
-                        <TouchableOpacity style={styles.addButton} onPress={() => router.push("/create")}>
-                            <Text style={styles.addButtonText}>Registra tu primera máquina</Text>
-                        </TouchableOpacity>
-                    </View>
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="checkmark-circle" size={50} color={COLORS.success} />
+                    <Text style={styles.emptyText}>No hay máquinas en mantenimiento</Text>
+                </View>
                 }
             />
         </View>
