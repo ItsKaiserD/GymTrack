@@ -27,6 +27,11 @@ const index = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
+  // 🔴 NUEVO: estado para el modal de reporte
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportingMachine, setReportingMachine] = useState(null);
+  const [reportMessage, setReportMessage] = useState('');
+
   const DURATION_OPTIONS = [15, 30, 45];
 
   const reserveWithDateTime = async (machineId, startAtISO, minutes) => {
@@ -106,31 +111,64 @@ const index = () => {
   );
   };
   
-  // helper para actualizar estado en backend
-  const updateStatus = async (id, nextStatus) => {
+  // 🟡 MODIFICADO: helper para actualizar estado y opcionalmente guardar mensaje de reporte
+  const updateStatus = async (id, nextStatus, reportMessageParam) => {
     try {
+      const body = reportMessageParam
+        ? { status: nextStatus, reportMessage: reportMessageParam }
+        : { status: nextStatus };
+
       const res = await fetch(`${API_URL}/machines/${id}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: nextStatus }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Error actualizando estado");
 
       // Actualiza en memoria la máquina modificada
       setMachines((prev) => prev.map(m => (m._id === data._id ? data : m)));
-      } catch (e) {
+    } catch (e) {
       console.log("Error actualizando estado:", e.message);
-      // Opcional: Alert.alert("Error", e.message)
+      Alert.alert("Error", e.message);
     }
   };
 
   // atajos
   const onReservar = (id) => updateStatus(id, "Reservada");
-  const onReportar = (id) => updateStatus(id, "Mantenimiento");
+
+  // 🔴 NUEVO: abrir modal de reporte
+  const openReportModal = (machine) => {
+    setReportingMachine(machine);
+    setReportMessage('');
+    setReportModalVisible(true);
+  };
+
+  const closeReportModal = () => {
+    setReportModalVisible(false);
+    setReportingMachine(null);
+    setReportMessage('');
+  };
+
+  // 🔴 NUEVO: enviar reporte con mensaje y cambiar a Mantenimiento
+  const handleSubmitReport = async () => {
+    if (!reportMessage.trim()) {
+      Alert.alert("Mensaje requerido", "Por favor describe el problema de la máquina.");
+      return;
+    }
+    if (!reportingMachine) return;
+
+    try {
+      await updateStatus(reportingMachine._id, "Mantenimiento", reportMessage.trim());
+      Alert.alert("Reporte enviado", "La máquina fue marcada en mantenimiento.");
+      closeReportModal();
+    } catch (e) {
+      // updateStatus ya muestra el error
+    }
+  };
 
   const handleReserve = (machineId, minutes) => {
   let d = new Date(selectedDate);
@@ -201,7 +239,7 @@ const renderItem = ({ item }) => (
       ))}
         <TouchableOpacity
           style={[styles.reserveChip, styles.reportChip]}
-          onPress={() => onReportar(item._id)}
+          onPress={() => openReportModal(item._id)}
         >
           <Text style={[styles.reserveChipText, styles.reportChipText]}>Reportar</Text>
         </TouchableOpacity>
@@ -210,7 +248,7 @@ const renderItem = ({ item }) => (
       <View style={styles.actionRow}>
         <TouchableOpacity
           style={[styles.actionBtn, styles.actionBtnWarn]}
-          onPress={() => onReportar(item._id)}
+          onPress={() => openReportModal(item._id)}
           disabled={item.status === "Mantenimiento"}
         >
           <Text style={styles.actionBtnText}>
@@ -238,6 +276,85 @@ const renderItem = ({ item }) => (
 
   return (
     <View style={styles.container}>
+      {/* 🔴 MODAL DE REPORTE */}
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeReportModal}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 16,
+          }}>
+            <View style={{
+              width: "100%",
+              maxWidth: 400,
+              backgroundColor: "#fff",
+              borderRadius: 16,
+              padding: 16,
+            }}>
+              <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>
+                Reportar problema
+              </Text>
+              {reportingMachine && (
+                <Text style={{ marginBottom: 8, color: COLORS.textSecondary }}>
+                  Máquina: <Text style={{ fontWeight: "600" }}>{reportingMachine.name}</Text>
+                </Text>
+              )}
+
+              <TextInput
+                placeholder="Describe el problema de la máquina..."
+                multiline
+                value={reportMessage}
+                onChangeText={setReportMessage}
+                style={{
+                  minHeight: 80,
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 8,
+                  padding: 8,
+                  textAlignVertical: "top",
+                  marginBottom: 12,
+                }}
+              />
+
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
+                <TouchableOpacity
+                  onPress={closeReportModal}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 8,
+                    backgroundColor: "#EEE",
+                  }}
+                >
+                  <Text>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleSubmitReport}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 8,
+                    backgroundColor: COLORS.primary,
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontWeight: "600" }}>Enviar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
       <FlatList
         data={machines}
         renderItem={renderItem}

@@ -99,6 +99,9 @@ import Reservation from "../models/Reservation.js";
  *               status:
  *                 type: string
  *                 enum: [Disponible, Reservada, Mantenimiento]
+ *               reportMessage:
+ *                 type: string
+ *                 description: Mensaje opcional cuando se marca como "Mantenimiento".
  *     responses:
  *       200:
  *         description: OK
@@ -408,18 +411,36 @@ router.patch("/:id/status", protectRoute, async (req, res) => {
   try {
     const { id } = req.params;
     const raw = String(req.body.status || "").trim();
+    const reportMessage = String(req.body.reportMessage || "").trim();
     const ALLOWED = new Set(["Disponible", "Reservada", "Mantenimiento"]);
 
     if (!ALLOWED.has(raw)) {
       return res.status(400).json({ message: "Estado inválido" });
     }
 
+    const updateDoc = { status: raw };
+
+    // 🔴 Si pasa a Mantenimiento y viene mensaje, guardamos el reporte
+    if (raw === "Mantenimiento" && reportMessage) {
+      updateDoc.lastReportMessage = reportMessage;
+      updateDoc.lastReportedBy = req.user._id;
+      updateDoc.lastReportedAt = new Date();
+    }
+
+    // (Opcional) Si quieres limpiar al volver a Disponible:
+    if (raw === "Disponible") {
+       updateDoc.lastReportMessage = null;
+       updateDoc.lastReportedBy = null;
+       updateDoc.lastReportedAt = null;
+     }
+
     const updated = await Machine.findByIdAndUpdate(
       id,
-      { $set: { status: raw } },
+      { $set: updateDoc },
       { new: true }
     )
       .populate("user", "username email role")
+      .populate("lastReportedBy", "username email role")
       .lean();
 
     if (!updated) return res.status(404).json({ message: "Máquina no encontrada" });
@@ -548,15 +569,20 @@ router.get("/my-reservations", protectRoute, async (req, res) => {
   }
 });
 
-// GET /machines/maintenance
+// Listar máquinas en mantenimiento
 router.get("/maintenance", protectRoute, async (req, res) => {
   try {
-    const machines = await Machine.find({ status: "Mantenimiento" }).sort({ name: 1 });
+    const machines = await Machine.find({ status: "Mantenimiento" })
+      .sort({ name: 1 })
+      .populate("user", "username")
+      .populate("lastReportedBy", "username email role");
+
     res.json(machines);
   } catch (err) {
     res.status(500).json({ message: "Error obteniendo máquinas en mantenimiento" });
   }
 });
+
 
 router.patch("/:id/avail", protectRoute, async (req, res) => {
   try {

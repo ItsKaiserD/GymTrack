@@ -74,6 +74,20 @@ export default function Profile(){
             <Text style={styles.bookTitle}>{item.name}</Text>
             <Text style={styles.bookSubtitle}>Estado: {item.status}</Text>
 
+            {/* QUIÉN LA REPORTÓ */}
+            {item.lastReportedBy?.username && (
+              <Text style={styles.bookSubtitle}>
+                Reportada por: {item.lastReportedBy.username}
+              </Text>
+            )}
+
+            {/* MENSAJE DEL REPORTE */}
+            {item.lastReportMessage && (
+              <Text style={styles.bookSubtitle}>
+                Mensaje: {item.lastReportMessage}
+              </Text>
+            )}
+
             <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => marcarDisponible(item._id)}
