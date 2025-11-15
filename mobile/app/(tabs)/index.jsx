@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Modal, KeyboardAvoidingView, Platform, TextInput } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
@@ -239,7 +239,7 @@ const renderItem = ({ item }) => (
       ))}
         <TouchableOpacity
           style={[styles.reserveChip, styles.reportChip]}
-          onPress={() => openReportModal(item._id)}
+          onPress={() => openReportModal(item)}
         >
           <Text style={[styles.reserveChipText, styles.reportChipText]}>Reportar</Text>
         </TouchableOpacity>
@@ -248,7 +248,7 @@ const renderItem = ({ item }) => (
       <View style={styles.actionRow}>
         <TouchableOpacity
           style={[styles.actionBtn, styles.actionBtnWarn]}
-          onPress={() => openReportModal(item._id)}
+          onPress={() => openReportModal(item)}
           disabled={item.status === "Mantenimiento"}
         >
           <Text style={styles.actionBtnText}>
