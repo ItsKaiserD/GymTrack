@@ -145,7 +145,8 @@ Configurar el archivo `/mobile/constants/api.js`
 
 🧑‍💻 Desarrollado por
 
-Luis Cabrera
+Luis Cabrera Johansen
+
 Estudiante de Ingenieria en Computación e Informática
 
 "Gestiona tu gimnasio, mide tu progreso, y lleva tu entrenamiento al siguiente nivel con GymTrack." 💪
