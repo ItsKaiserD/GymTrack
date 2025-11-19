@@ -1,19 +1,40 @@
 # 🏋️‍♂️ GymTrack
 
-**GymTrack** es una aplicación móvil desarrollada con **React Native (Expo)** y un backend en **Node.js + Express + MongoDB**, diseñada para la gestión de gimnasios.  
-Permite registrar máquinas de entrenamiento, subir imágenes a Cloudinary, autenticar usuarios con JWT y diferenciar entre **roles de administrador y entrenador**.
+**GymTrack** es una aplicación móvil para la gestión de máquinas de entrenamiento en gimnasios.
+Permite reservar máquinas, reportar problemas, visualizar su estado y facilitar la administración en tiempo real mediante control centralizado.
+
+Construida con **React Native (Expo)** y un backend **Node.js + Express + MongoDB**, con despliegue en **Render**, entrega una experiencia moderna, rápida y escalable.
 
 ---
 
-## 🚀 Características
+## 🚀 Características Principales
 
-- **Autenticación JWT** (registro, login y logout)
-- **Roles de usuario:** Administrador 🧠 y Entrenador 💪
-- **Gestión de máquinas:** creación con imagen, listado paginado y eliminación
-- **Subida de imágenes** a Cloudinary mediante `multer` y `upload_stream`
-- **Almacenamiento local** con AsyncStorage
-- **API REST** protegida con middleware `protectRoute`
-- **Interfaz moderna** con Expo, `react-native-vector-icons`, `zustand` y `expo-router`
+### 🔐 Autenticación y Roles
+- Registro, login y protección con JWT
+
+### Roles:
+- Administrador: visualiza todas las máquinas, gestiona reportes y disponibilidad
+- Entrenador: reserva máquinas y reporta problemas
+
+### 🏋️ Gestión de Máquinas
+- Crear máquina con imagen (subida a Cloudinary)
+- Estado dinámico: Disponible / Reservada / Mantenimiento
+- Temporizador de reservas en tiempo real
+- Listado paginado desde el backend
+
+### 📆 Reservas
+- Botón Reservar en cada tarjeta de máquina
+- Modal para seleccionar fecha, hora y duración
+- Actualización automática del estado
+
+### ⚠️ Reportes de mantenimiento
+- Botón Reportar
+- Modal para escribir mensaje del problema
+- Para admin: vista de máquinas en mantenimiento con mensaje + quién reportó
+
+### ☁️ Despliegue
+- Backend desplegado en Render
+- Base de datos en MongoDB Atlas
 
 ---
 
@@ -54,8 +75,10 @@ El backend se puede desplegar fácilmente en Render.
 
 ### 3️⃣ Configurar la App Móvil
 Instalar dependencias
-cd mobile
-npm install
+
+`cd mobile`
+
+`npm install`
 
 Configurar el archivo `/mobile/constants/api.js`
 
@@ -64,16 +87,6 @@ Configurar el archivo `/mobile/constants/api.js`
 ### Ejecutar en modo desarrollo
 
 `npx expo start`
-
-### 🧠 Roles de Usuario
-
-Durante el registro, el usuario puede elegir:
-
-Administrador (admin): gestiona y visualiza todas las máquinas.
-
-Entrenador (trainer): registra sus propias máquinas.
-
-El rol se guarda automáticamente en MongoDB y se puede usar más adelante para redirigir a distintas pantallas según el tipo de cuenta.
 
 ###🗄️ Endpoints Principales
 `Auth`
@@ -89,7 +102,9 @@ El rol se guarda automáticamente en MongoDB y se puede usar más adelante para 
 |--------|------|-------------|
 |GET|	/api/machines|	Lista máquinas paginadas|
 |POST|	/api/machines|	Crea una nueva máquina con imagen (requiere token)|
-|DELETE|	/api/machines/:id |	Elimina una máquina propia|
+|PATCH|	/api/machines/:id/status | Cambia estado + mensaje de reporte|
+|POST| /api/machines/:id/reserve | Reservar máquina|
+|GET| /api/machines/maintenance | Máquinas Reportadas (Admin)|
 
 ### ☁️ Despliegue en Render
 
