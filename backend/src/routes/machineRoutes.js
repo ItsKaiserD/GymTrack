@@ -376,7 +376,7 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
-// DELETE máquina (solo admin)
+// DELETE máquina (solo admin, sin reservas activas/futuras ni mantenimiento)
 router.delete("/:id", protectRoute, async (req, res) => {
   try {
     const { id } = req.params;
@@ -384,7 +384,8 @@ router.delete("/:id", protectRoute, async (req, res) => {
     // 🔐 Solo admins pueden eliminar máquinas
     if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({
-        message: "Acción no autorizada. Solo administradores pueden eliminar máquinas."
+        message:
+          "Acción no autorizada. Solo administradores pueden eliminar máquinas.",
       });
     }
 
@@ -395,27 +396,26 @@ router.delete("/:id", protectRoute, async (req, res) => {
 
     const now = new Date();
 
-    // ⛔ NO permitir eliminar si tiene reserva activa o futura
-    const hasActiveOrFutureReservation =
-      machine.reservationStartedAt && (
-      // reserva futura
-      machine.reservationStartedAt > now ||
-      // reserva activa (empezó y aún no termina)
-      (machine.reservationExpiresAt && machine.reservationExpiresAt > now)
-    );
+    // ⛔ NO permitir eliminar si tiene UNA reserva activa o futura
+    // (status Reservada o Activa y endAt > ahora)
+    const hasActiveOrFutureReservation = await Reservation.findOne({
+      machine: id,
+      status: { $in: ["Reservada", "Activa"] },
+      endAt: { $gt: now },
+    }).lean();
 
     if (hasActiveOrFutureReservation) {
       return res.status(400).json({
         message:
-        "No se puede eliminar la máquina porque tiene una reserva activa o próxima."
-  });
-}
+          "No se puede eliminar la máquina porque tiene una reserva activa o próxima.",
+      });
+    }
 
     // ⛔ NO permitir eliminar si está en mantenimiento
     if (machine.status === "Mantenimiento") {
       return res.status(400).json({
         message:
-          "No se puede eliminar la máquina porque está en mantenimiento. Marca la incidencia como resuelta antes de eliminarla."
+          "No se puede eliminar la máquina porque está en mantenimiento. Marca la incidencia como resuelta antes de eliminarla.",
       });
     }
 

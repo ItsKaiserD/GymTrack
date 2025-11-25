@@ -59,38 +59,38 @@ const index = () => {
   };
 
   const deleteMachine = (id) => {
-  Alert.alert(
-    "Eliminar máquina",
-    "¿Estás seguro de que deseas eliminar esta máquina? Esta acción no se puede deshacer.",
-    [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const res = await fetch(`${API_URL}/machines/${id}`, {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
+    Alert.alert(
+      "Eliminar máquina",
+      "¿Estás seguro de que deseas eliminar esta máquina? Esta acción no se puede deshacer.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_URL}/machines/${id}`, {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
 
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              throw new Error(data.message || "Error al eliminar máquina");
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                throw new Error(data.message || "Error al eliminar máquina");
+              }
+
+              // Sacar la máquina de la lista
+              setMachines((prev) => prev.filter((m) => m._id !== id));
+            } catch (e) {
+              console.log("Error al eliminar máquina:", e.message);
+              Alert.alert("Error", e.message);
             }
-
-            // Actualizar listado en memoria
-            setMachines((prev) => prev.filter((m) => m._id !== id));
-          } catch (e) {
-            console.log("Error al eliminar máquina:", e.message);
-            Alert.alert("Error", e.message);
-          }
+          },
         },
-      },
-    ]
-  );
+      ]
+    );
   };
 
   const StatusPill = ({ status }) => {
