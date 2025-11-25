@@ -397,16 +397,19 @@ router.delete("/:id", protectRoute, async (req, res) => {
 
     // ⛔ NO permitir eliminar si tiene reserva activa o futura
     const hasActiveOrFutureReservation =
-      machine.reservationStartedAt &&
-      machine.reservationExpiresAt &&
-      machine.reservationExpiresAt > now;
+      machine.reservationStartedAt && (
+      // reserva futura
+      machine.reservationStartedAt > now ||
+      // reserva activa (empezó y aún no termina)
+      (machine.reservationExpiresAt && machine.reservationExpiresAt > now)
+    );
 
     if (hasActiveOrFutureReservation) {
       return res.status(400).json({
         message:
-          "No se puede eliminar la máquina porque tiene una reserva activa o próxima."
-      });
-    }
+        "No se puede eliminar la máquina porque tiene una reserva activa o próxima."
+  });
+}
 
     // ⛔ NO permitir eliminar si está en mantenimiento
     if (machine.status === "Mantenimiento") {

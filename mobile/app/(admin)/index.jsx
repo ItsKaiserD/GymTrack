@@ -125,9 +125,13 @@ const index = () => {
   const now = new Date();
 
   const hasReservationLock =
-    item.reservationStartedAt &&
-    item.reservationExpiresAt &&
-    new Date(item.reservationExpiresAt) > now;
+    item.reservationStartedAt && (
+      // reserva futura
+      new Date(item.reservationStartedAt) > now ||
+      // reserva activa
+      (item.reservationExpiresAt &&
+        new Date(item.reservationExpiresAt) > now)
+    );
 
   const isInMaintenance = item.status === "Mantenimiento";
 
