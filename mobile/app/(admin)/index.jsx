@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Image } from 'expo-image'
@@ -58,6 +58,41 @@ const index = () => {
     }
   };
 
+  const deleteMachine = (id) => {
+  Alert.alert(
+    "Eliminar máquina",
+    "¿Estás seguro de que deseas eliminar esta máquina? Esta acción no se puede deshacer.",
+    [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const res = await fetch(`${API_URL}/machines/${id}`, {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              throw new Error(data.message || "Error al eliminar máquina");
+            }
+
+            // Actualizar listado en memoria
+            setMachines((prev) => prev.filter((m) => m._id !== id));
+          } catch (e) {
+            console.log("Error al eliminar máquina:", e.message);
+            Alert.alert("Error", e.message);
+          }
+        },
+      },
+    ]
+  );
+  };
+
   const StatusPill = ({ status }) => {
   const s = status || "Disponible"; // fallback para registros viejos
   const map = {
@@ -99,6 +134,27 @@ const index = () => {
       <Text style={styles.cardTitle}>{item.name}</Text>
       <Text style={styles.cardMeta}>Creada por: {item?.user?.username || "N/A"}</Text>
       <StatusPill status={item.status} />
+      {/* Botón Eliminar */}
+      <View style={{ flexDirection: "row", marginTop: 10 }}>
+        <TouchableOpacity
+          onPress={() => deleteMachine(item._id)}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 8,
+            backgroundColor: "#FFEBEE",
+            borderWidth: 1,
+            borderColor: "#C62828",
+            alignSelf: "flex-start",
+          }}
+        >
+          <Text
+            style={{ color: "#C62828", fontWeight: "600", fontSize: 12 }}
+          >
+            Eliminar
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   </View>
 );

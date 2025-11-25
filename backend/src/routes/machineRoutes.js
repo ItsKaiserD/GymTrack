@@ -376,25 +376,31 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
-// DELETE (sin cambios)
+// DELETE máquina (solo admin)
 router.delete("/:id", protectRoute, async (req, res) => {
   try {
-    const machine = await Machine.findById(req.params.id);
-    if (!machine) return res.status(404).json({ message: "Máquina no encontrada" });
+    const { id } = req.params;
 
-    const userId = req.user?._id?.toString?.() || req.user?.id?.toString?.();
-    if (!userId || machine.user.toString() !== userId) {
-      return res.status(401).json({ message: "Acción no autorizada" });
+    // 🔐 Solo admins pueden eliminar máquinas
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({ message: "Acción no autorizada. Solo administradores pueden eliminar máquinas." });
+    }
+
+    const machine = await Machine.findById(id);
+    if (!machine) {
+      return res.status(404).json({ message: "Máquina no encontrada" });
     }
 
     await machine.deleteOne();
-    res.json({ message: "Imagen eliminada correctamente" });
+
+    return res.json({ message: "Máquina eliminada correctamente" });
   } catch (error) {
     console.log("Error eliminando máquina", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
+// Ruta de prueba / probe
 router.post("/_probe", (req, res) => {
   res.json({
     version: "v7",
