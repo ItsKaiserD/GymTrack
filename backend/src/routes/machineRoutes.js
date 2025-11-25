@@ -383,7 +383,9 @@ router.delete("/:id", protectRoute, async (req, res) => {
 
     // 🔐 Solo admins pueden eliminar máquinas
     if (!req.user || req.user.role !== "admin") {
-      return res.status(403).json({ message: "Acción no autorizada. Solo administradores pueden eliminar máquinas." });
+      return res.status(403).json({
+        message: "Acción no autorizada. Solo administradores pueden eliminar máquinas."
+      });
     }
 
     const machine = await Machine.findById(id);
@@ -391,11 +393,34 @@ router.delete("/:id", protectRoute, async (req, res) => {
       return res.status(404).json({ message: "Máquina no encontrada" });
     }
 
-    await machine.deleteOne();
+    const now = new Date();
 
+    // ⛔ NO permitir eliminar si tiene reserva activa o futura
+    const hasActiveOrFutureReservation =
+      machine.reservationStartedAt &&
+      machine.reservationExpiresAt &&
+      machine.reservationExpiresAt > now;
+
+    if (hasActiveOrFutureReservation) {
+      return res.status(400).json({
+        message:
+          "No se puede eliminar la máquina porque tiene una reserva activa o próxima."
+      });
+    }
+
+    // ⛔ NO permitir eliminar si está en mantenimiento
+    if (machine.status === "Mantenimiento") {
+      return res.status(400).json({
+        message:
+          "No se puede eliminar la máquina porque está en mantenimiento. Marca la incidencia como resuelta antes de eliminarla."
+      });
+    }
+
+    // ✅ Si pasa las validaciones, se elimina
+    await machine.deleteOne();
     return res.json({ message: "Máquina eliminada correctamente" });
   } catch (error) {
-    console.log("Error eliminando máquina", error);
+    console.log("Error eliminando máquina:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });

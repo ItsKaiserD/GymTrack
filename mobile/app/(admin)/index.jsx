@@ -121,8 +121,49 @@ const index = () => {
     fetchMachines(page + 1, false);
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }) => {
+  const now = new Date();
+
+  const hasReservationLock =
+    item.reservationStartedAt &&
+    item.reservationExpiresAt &&
+    new Date(item.reservationExpiresAt) > now;
+
+  const isInMaintenance = item.status === "Mantenimiento";
+
+  const canDelete = !hasReservationLock && !isInMaintenance;
+
+  return (
     <View style={styles.card}>
+      {/* 🔺 Botón en esquina superior derecha */}
+      <View
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          zIndex: 10,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => canDelete && deleteMachine(item._id)}
+          disabled={!canDelete}
+          style={{
+            padding: 6,
+            borderRadius: 999,
+            backgroundColor: canDelete ? "#FFEBEE" : "#ECEFF1",
+            borderWidth: 1,
+            borderColor: canDelete ? "#C62828" : "#B0BEC5",
+            opacity: canDelete ? 1 : 0.6,
+          }}
+        >
+          <Ionicons
+            name={canDelete ? "trash-outline" : "lock-closed-outline"}
+            size={18}
+            color={canDelete ? "#C62828" : "#607D8B"}
+          />
+        </TouchableOpacity>
+      </View>
+
       <Image
         source={{ uri: item.image }}
         style={styles.cardImage}
@@ -130,34 +171,26 @@ const index = () => {
         transition={200}
       />
 
-    <View style={styles.cardBody}>
-      <Text style={styles.cardTitle}>{item.name}</Text>
-      <Text style={styles.cardMeta}>Creada por: {item?.user?.username || "N/A"}</Text>
-      <StatusPill status={item.status} />
-      {/* Botón Eliminar */}
-      <View style={{ flexDirection: "row", marginTop: 10 }}>
-        <TouchableOpacity
-          onPress={() => deleteMachine(item._id)}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 8,
-            backgroundColor: "#FFEBEE",
-            borderWidth: 1,
-            borderColor: "#C62828",
-            alignSelf: "flex-start",
-          }}
-        >
-          <Text
-            style={{ color: "#C62828", fontWeight: "600", fontSize: 12 }}
-          >
-            Eliminar
+      <View style={styles.cardBody}>
+        <Text style={styles.cardTitle}>{item.name}</Text>
+        <Text style={styles.cardMeta}>
+          Creada por: {item?.user?.username || "N/A"}
+        </Text>
+        <StatusPill status={item.status} />
+
+        {/* Info extra debajo si está bloqueada */}
+        {(hasReservationLock || isInMaintenance) && (
+          <Text style={[styles.cardMeta, { marginTop: 4 }]}>
+            {hasReservationLock
+              ? "No se puede eliminar: tiene una reserva activa o próxima."
+              : "No se puede eliminar: se encuentra en mantenimiento."}
           </Text>
-        </TouchableOpacity>
+        )}
       </View>
     </View>
-  </View>
-);
+  );
+};
+
 
   if (loading) return <Loader/>
 
