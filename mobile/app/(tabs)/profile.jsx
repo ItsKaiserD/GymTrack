@@ -71,15 +71,27 @@ export default function Profile(){
         let infoLinea = "";
         if (start && end) {
             if (nowDate < start) {
-            const mins = Math.max(0, Math.ceil((start.getTime() - nowDate.getTime()) / 60000));
-            infoLinea = `Comienza en ${mins} min`;
+                const diffMs = start.getTime() - nowDate.getTime();
+                const diffMin = Math.max(0, Math.ceil(diffMs / 60000));
+
+                if (diffMin < 60) {
+                    // Menos de una hora → en minutos
+                    infoLinea = `Comienza en ${diffMin} minutos`;
+                } else {
+                    // Una hora o más → en horas
+                const hours = Math.round(diffMin / 60);
+                infoLinea = `Comienza en ${hours} horas`;
+                }
             } else if (nowDate >= start && nowDate <= end) {
-                const mins = Math.max(0, Math.ceil((end.getTime() - nowDate.getTime()) / 60000));
-                infoLinea = `Termina en ${mins} min`;
-            } else {
-                infoLinea = "Reserva finalizada";
-            }
-        }
+            const mins = Math.max(
+            0,
+            Math.ceil((end.getTime() - nowDate.getTime()) / 60000)
+            );
+            infoLinea = `Termina en ${mins} minutos`;
+  } else {
+    infoLinea = "Reserva finalizada";
+  }
+}
 
         const fechaTexto = start
             ? start.toLocaleString("es-CL", {
