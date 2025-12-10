@@ -12,6 +12,7 @@ import net from "net";
 import { swaggerSpec } from "./lib/swagger.js";
 import swaggerUi from "swagger-ui-express";
 import cors from "cors";
+import job from "./lib/cron.js";
 
 const app = express();
 app.use(cors({
@@ -256,7 +257,17 @@ app.get("/api/test-send", async (req, res) => {
     startReservationScheduler(); // 4) iniciar planificador de reservas
     // 5) iniciar servidor
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`API listening on ${PORT}`));
+    app.listen(PORT, () => {
+      console.log(`API listening on ${PORT}`);
+
+      // 🔁 Iniciar CRON para mantener Render despierto (solo si API_URL existe)
+      if (process.env.API_URL) {
+        job.start();
+        console.log("[cron] Keep-alive job iniciado (cada 14 minutos)");
+      } else {
+        console.warn("[cron] API_URL no está definido; keep-alive desactivado");
+      }
+    });
   } catch (err) {
     console.error("[bootstrap] Falló el arranque:", err.message);
     process.exit(1);
