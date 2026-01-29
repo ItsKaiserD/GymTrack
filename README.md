@@ -150,3 +150,6 @@ Luis Cabrera Johansen
 Estudiante de Ingenieria en Computación e Informática
 
 "Gestiona tu gimnasio, mide tu progreso, y lleva tu entrenamiento al siguiente nivel con GymTrack." 💪
+
+### ¿Quieres Saber Más? Visita nuestra página web:
+https://gymtrack.exposmart.cl/
